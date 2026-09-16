@@ -1,0 +1,159 @@
+/* Rounded Cyrillic typography, served with the site. */
+@font-face {
+  font-family: 'FC Gothic';
+  src: url('/fonts/URWGothic-Book.otf') format('opentype');
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'FC Gothic';
+  src: url('/fonts/URWGothic-Demi.otf') format('opentype');
+  font-style: normal;
+  font-weight: 600 800;
+  font-display: swap;
+}
+:root {
+  --sans: 'FC Gothic', 'Trebuchet MS', sans-serif;
+  --serif: var(--sans);
+}
+body { font-size: 16px; line-height: 1.7; }
+h1, h2, h3 { text-wrap: balance; }
+.hero-copy, .schedule, .code-card, .panels { min-width: 0; }
+h1 {
+  font-size: clamp(44px, 4.8vw, 66px);
+  line-height: 1.17;
+  letter-spacing: -.045em;
+  font-weight: 400;
+  white-space: normal;
+  margin-bottom: 25px;
+}
+h1 em { font-style: normal; }
+h2, .section-title h2, .code-card h2, .explore-header h2 {
+  font-size: clamp(30px, 2.8vw, 38px);
+  line-height: 1.27;
+  letter-spacing: -.035em;
+  font-weight: 400;
+}
+.interest-panel h3, .setup-panel h3 {
+  font-size: clamp(25px, 2.3vw, 30px);
+  line-height: 1.32;
+  letter-spacing: -.025em;
+  max-width: 100%;
+  font-weight: 400;
+}
+.intro { font-size: 17px; line-height: 1.85; }
+.section-intro, .explore-header > p { font-size: 15px; line-height: 1.75; }
+.rules p, .interest-panel > p, .setup-panel > p { font-size: 15px; line-height: 1.8; }
+.rules h3 { font-size: 16px; line-height: 1.5; font-weight: 600; margin-bottom: 7px; }
+.rules li { margin-bottom: 23px; }
+.rule-number { font-size: 19px; font-style: normal; padding-top: 2px; }
+.brand-name { font-size: 18px; letter-spacing: -.02em; }
+.brand-name > span { font-size: 10px; letter-spacing: .12em; }
+.brand-mark { font-size: 25px; letter-spacing: -.08em; }
+.header nav { font-size: 14px; gap: 25px; }
+.header nav a { white-space: nowrap; }
+.welcome-badge { font-size: 12px; }
+.eyebrow, .hero .eyebrow, .gathering .eyebrow, .explore-header .eyebrow {
+  font-size: 11px;
+  letter-spacing: .14em;
+  line-height: 1.7;
+}
+.button, .interest-panel .button { font-size: 15px; line-height: 1.5; gap: 25px; }
+.hero-note { font-size: 13px; }
+.hero-bottom > span { font-size: 11px; letter-spacing: .09em; }
+.hero-bottom > div { font-size: 14px; }
+.hero-bottom > a { font-size: 12px; }
+.art-caption { font-size: 11px; letter-spacing: .2em; }
+.lantern-switch { font-size: 12px; }
+.day-abbr { font-size: 32px; line-height: 1.2; letter-spacing: -.025em; }
+.day > span:not(.day-abbr) { font-size: 13px; }
+.day small { font-size: 12px; }
+.schedule-foot > span, .schedule-foot > a { font-size: 13px; line-height: 1.65; }
+.schedule-foot svg { flex-shrink: 0; }
+.code-signature { font-size: 12px; line-height: 1.75; }
+.interest strong { font-size: 16px; font-weight: 600; }
+.interest small { font-size: 12px; line-height: 1.6; }
+.interest { gap: 16px; padding: 20px; }
+.interest-icon, .interest-arrow { flex-shrink: 0; }
+.panel-tag, .setup-panel .panel-tag {
+  font-size: 11px;
+  line-height: 1.7;
+  letter-spacing: .1em;
+  flex-wrap: wrap;
+  max-width: calc(100% - 64px);
+  gap: 8px;
+  min-height: 38px;
+  margin-bottom: 25px;
+}
+.setup-panel .panel-tag { max-width: 100%; min-height: 0; }
+.panel-footnote { font-size: 12px; line-height: 1.75; }
+.specs, .full-setup { font-size: 14px; line-height: 1.65; }
+.specs > div { padding: 9px 0; }
+.specs dd { overflow-wrap: anywhere; }
+.places { grid-template-columns: 1.1fr 1fr 1fr 1fr; gap: 20px; }
+.places-label { font-size: 11px; letter-spacing: .08em; }
+.place strong { font-size: 18px; }
+.place small { font-size: 12px; line-height: 1.65; }
+.footer { font-size: 12px; }
+.footer-brand { font-size: 22px; }
+.footer-brand span, .footer > a:last-child { font-size: 12px; }
+@media (min-width: 761px) and (max-width: 1050px) {
+  h1 { font-size: clamp(38px, 5vw, 52px); }
+  .header nav { font-size: 13px; gap: 18px; }
+  .welcome-badge { display: none; }
+  .hero-bottom { flex-wrap: wrap; padding-top: 18px; padding-bottom: 18px; }
+  .hero-bottom > span { max-width: none; }
+  .days { gap: 7px; }
+  .day { padding: 19px 10px; }
+  .day > span:not(.day-abbr) { font-size: 12px; }
+  .navigator { grid-template-columns: .9fr 1.3fr; }
+  .interest { padding: 17px 14px; gap: 12px; }
+  .interest-panel { padding: 27px; }
+  .places { grid-template-columns: repeat(3, 1fr); gap: 20px; padding: 24px 0; }
+  .places-label { grid-column: 1 / -1; }
+  .places > .place:nth-child(2) { border-left: 0; padding-left: 0; }
+}
+@media (max-width: 760px) {
+  .header { height: auto; min-height: 90px; padding-top: 20px; padding-bottom: 20px; }
+  .brand-name { font-size: 16px; }
+  .brand-name > span { font-size: 9px; letter-spacing: .1em; }
+  .header nav { margin-left: 0; }
+  .header nav a { font-size: 12px; }
+  h1 { font-size: clamp(35px, 9.2vw, 60px); line-height: 1.2; letter-spacing: -.045em; }
+  h2, .section-title h2, .code-card h2, .explore-header h2 { font-size: 30px; }
+  .intro { font-size: 16px; line-height: 1.85; }
+  .desktop-break { display: none; }
+  .hero-note { font-size: 13px; }
+  .hero-bottom > span { font-size: 11px; }
+  .hero-bottom > div { font-size: 13px; gap: 15px; flex-wrap: wrap; }
+  .art-caption { font-size: 10px; }
+  .lantern-switch { font-size: 11px; }
+  .day { padding: 18px 10px; }
+  .day-abbr { font-size: 29px; }
+  .day > span:not(.day-abbr) { font-size: 12px; }
+  .day small { font-size: 11px; }
+  .section-intro, .explore-header > p { font-size: 15px; }
+  .rules p, .interest-panel > p, .setup-panel > p { font-size: 15px; }
+  .code-signature { align-items: flex-start; }
+  .interest { padding: 17px 12px; gap: 10px; }
+  .interest strong { font-size: 14px; }
+  .interest-panel { padding: 26px 22px; }
+  .interest-panel h3, .setup-panel h3 { font-size: 26px; }
+  .panel-tag, .setup-panel .panel-tag { font-size: 10px; letter-spacing: .08em; }
+  .specs, .full-setup { font-size: 13px; }
+  .specs > div { gap: 14px; }
+  .specs dt { flex-shrink: 0; }
+  .places { grid-template-columns: 1fr; gap: 0; }
+  .place strong { font-size: 18px; }
+  .place small { font-size: 13px; }
+  .footer > span { font-size: 12px; line-height: 1.8; }
+  .footer-brand span { font-size: 12px; }
+}
+@media (max-width: 370px) {
+  .header nav { width: 100%; }
+  .interest { gap: 7px; padding: 15px 9px; }
+  .interest strong { font-size: 13px; }
+  .interest-panel { padding: 24px 18px; }
+  .day > span:not(.day-abbr) { font-size: 11px; }
+}

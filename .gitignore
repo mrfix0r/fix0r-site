@@ -1,0 +1,52 @@
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+**/config.php
+**/config.local.*
+*.pem
+*.key
+*.p12
+*.pfx
+*.kdbx
+
+# Backups, exported databases, and uploaded archives
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.7z
+*.rar
+*.bak
+*.old
+*.orig
+*.backup
+*.sql
+!dkp/schema.sql
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+*.sqlite-*
+*.sqlite3-*
+/backups/
+/private/
+/dkp/data/
+/dkp/backups/
+/uploads/
+/dkp/uploads/
+
+# Runtime files
+*.log
+/logs/
+/dkp/logs/
+/cache/
+/dkp/cache/
+/sessions/
+/dkp/sessions/
+
+# Editor and operating system files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

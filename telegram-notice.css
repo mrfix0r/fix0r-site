@@ -1,0 +1,23 @@
+/* Telegram announcement, scoped to the homepage banner. */
+.telegram-notice{padding-top:28px}
+.telegram-notice-card{display:flex;align-items:center;justify-content:space-between;gap:32px;padding:28px 32px;border:1px solid #528ba2;border-radius:14px;background:linear-gradient(115deg,#213647,#242031);box-shadow:0 12px 35px #0002}
+.telegram-notice-copy{max-width:730px;min-width:0}
+.telegram-kicker{color:#90d7f4;font-size:11px;font-weight:700;letter-spacing:.15em;margin:0 0 8px}
+.telegram-notice h2{color:#f3f8fc;font-size:clamp(25px,2.5vw,34px);line-height:1.25;margin:0 0 12px;letter-spacing:-.025em}
+.telegram-notice-copy>p:last-child{color:#d2dfe9;font-size:15px;line-height:1.75;margin:0}
+.telegram-button{flex-shrink:0;background:#9bdcf5;color:#142b3b;font-weight:700;border-radius:8px;gap:16px}
+.telegram-button:hover{background:#c1edff}
+.telegram-button:focus-visible{outline:3px solid #f5ece7;outline-offset:5px}
+@media(max-width:900px){.telegram-notice-card{align-items:flex-start;flex-direction:column;gap:22px}}
+@media(max-width:760px){.telegram-notice{padding-top:20px}.telegram-notice-card{padding:24px 20px}.telegram-button{width:100%;font-size:14px}}
+
+.telegram-notice-actions{display:flex;flex-direction:column;gap:12px;flex:0 0 310px;max-width:100%}
+.telegram-notice-actions .button{width:100%;min-width:0;font-size:14px;gap:12px}
+.youtube-stream-button{background:#b72432;color:#fff;font-weight:700;border-radius:8px;border:1px solid #f08b95}
+.youtube-stream-button:hover{background:#ce2c3c}
+.youtube-stream-button:focus-visible{outline:3px solid #f5ece7;outline-offset:5px}
+@media(max-width:900px){.telegram-notice-actions{flex-basis:auto;width:100%;flex-direction:row;flex-wrap:wrap}.telegram-notice-actions .button{flex:1 1 260px}}
+
+.teamspeak-button{background:#c5acdd;color:#24182f;font-weight:700;border-radius:8px;border:1px solid #dcc8ed}
+.teamspeak-button:hover{background:#dcc8ed}
+.teamspeak-button:focus-visible{outline:3px solid #f5ece7;outline-offset:5px}
