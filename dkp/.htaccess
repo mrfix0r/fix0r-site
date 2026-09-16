@@ -1,5 +1,6 @@
 Options -Indexes
 DirectoryIndex index.php
-<FilesMatch "^(config(?:\.example)?\.php|auth\.php|schema\.sql)$">
+LimitRequestBody 8192
+<FilesMatch "^(config(?:\.example)?\.php|auth\.php|schema\.sql|dkp_store\.php|events_store\.php|auctions_store\.php|scheduled_events\.php|cw_schedule\.php|manage_view\.php|events_view\.php|auctions_view\.php|migration_view\.php)$">
   Require all denied
 </FilesMatch>

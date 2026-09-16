@@ -50,18 +50,46 @@ final class Auth {
     public function user(int $id): array|false {
         return $this->query('SELECT id,email,nickname,role,verified_at,session_version FROM dkp_users WHERE id=?', [$id])->fetch();
     }
-    public function register(string $email, string $nickname, string $password): void {
+    public function register(string $email, string $nickname, string $password, bool $newMember=false): void {
         $email = self::email($email); $nickname = trim($nickname);
         if (!preg_match('/^[^\p{C}]{1,32}$/u', $nickname)) throw new AuthError('Игровой ник: от 1 до 32 символов без управляющих знаков.');
         $hash = self::hashPassword($password);
+        $this->db->beginTransaction();
         try {
-            $this->query('INSERT INTO dkp_users(email,nickname,password_hash,created_at) VALUES(?,?,?,?)', [$email,$nickname,$hash,time()]);
-        } catch (PDOException $e) {
-            if (!in_array((string)$e->getCode(), ['23000','23505'], true)) throw $e;
-            return; // Do not disclose existing accounts or change someone else's password.
-        }
-        $this->sendToken((int)$this->db->lastInsertId(), $email, 'verify');
+            try {
+                $this->query('INSERT INTO dkp_users(email,nickname,password_hash,created_at) VALUES(?,?,?,?)', [$email,$nickname,$hash,time()]);
+            } catch (PDOException $e) {
+                if (!in_array((string)$e->getCode(), ['23000','23505'], true)) throw $e;
+                $this->db->rollBack();return; // Never alter an existing account's intent.
+            }
+            $id=(int)$this->db->lastInsertId();
+            if($newMember)$this->query('INSERT INTO fc_registration_members(web_user_id,nickname,status) VALUES(?,?,?)',[$id,$nickname,'pending']);
+            $this->db->commit();
+        } catch(Throwable $e) {if($this->db->inTransaction())$this->db->rollBack();throw $e;}
+        // Email is sent after commit; resend retains the saved registration intent.
+        $this->sendToken($id, $email, 'verify');
     }
+    // Runs only inside email redemption, under the shared DKP write lock.
+    private function createRegistrationMember(int $id):void {
+        $intent=$this->query('SELECT nickname,status FROM fc_registration_members WHERE web_user_id=?',[$id])->fetch();
+        if(!$intent)return;
+        if($this->query('SELECT member_id FROM fc_web_links WHERE web_user_id=?',[$id])->fetchColumn()) {
+            $this->query('DELETE FROM fc_registration_members WHERE web_user_id=?',[$id]);return;
+        }
+        // A matching nickname is never proof of ownership, including archived profiles.
+        if($this->query('SELECT member_id FROM fc_roster WHERE nickname=?',[$intent['nickname']])->fetchColumn()) {
+            $this->query("UPDATE fc_registration_members SET status='conflict' WHERE web_user_id=?",[$id]);return;
+        }
+        $this->query('INSERT INTO fc_roster(nickname,created_at) VALUES(?,?)',[$intent['nickname'],time()]);
+        $member=(string)$this->db->lastInsertId();
+        $this->query('INSERT INTO fc_web_links(web_user_id,member_id,linked_at) VALUES(?,?,?)',[$id,$member,time()]);
+        $details=['nickname'=>$intent['nickname'],'member_id'=>$member,'account'=>$id,'registration'=>true];
+        $key=hash('sha256','registration-member:'.$id);
+        $json=json_encode($details,JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR);
+        $this->query('INSERT INTO fc_operations(request_key,actor_id,kind,payload_hash,details,created_at) VALUES(?,?,?,?,?,?)',[$key,$id,'create',hash('sha256',$json),$json,time()]);
+        $this->query('DELETE FROM fc_registration_members WHERE web_user_id=?',[$id]);
+    }
+
     public function sendToken(int $id, string $email, string $purpose): void {
         $raw = bin2hex(random_bytes(32));
         $this->query('DELETE FROM dkp_tokens WHERE expires_at<=?', [time()]);
@@ -95,6 +123,8 @@ final class Auth {
         $hash = $purpose === 'reset' ? self::hashPassword($password) : null;
         $this->db->beginTransaction();
         try {
+            // Same lock order as all roster/link/award operations. Reset also verifies email.
+            if($this->query('UPDATE fc_write_lock SET revision=revision+1 WHERE id=1')->rowCount()!==1)throw new RuntimeException('Missing write lock');
             $q = $this->query('DELETE FROM dkp_tokens WHERE token_hash=? AND purpose=? AND expires_at>?', [hash('sha256',$raw),$purpose,time()]);
             if ($q->rowCount() !== 1) throw new AuthError('Ссылка уже использована. Запроси новое письмо.');
             if ($purpose === 'reset') {
@@ -103,6 +133,7 @@ final class Auth {
                 $q = $this->query('UPDATE dkp_users SET verified_at=?,session_version=session_version+1 WHERE id=? AND password_hash=?', [time(),$row['user_id'],$row['password_hash']]);
                 if ($q->rowCount() !== 1) throw new AuthError('Пароль изменился. Запроси новое письмо.');
             }
+            $this->createRegistrationMember((int)$row['user_id']);
             $this->query('DELETE FROM dkp_tokens WHERE user_id=?', [$row['user_id']]);
             $this->db->commit();
         } catch (Throwable $e) { $this->db->rollBack(); throw $e; }
