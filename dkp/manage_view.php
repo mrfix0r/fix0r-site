@@ -1,6 +1,32 @@
 <?php
 if (!isset($user,$dkp) || !$user || !in_array($user['role'],['admin','officer'],true)) { http_response_code(403);exit; }
 $roster=$dkp->roster();$admin=$user['role']==='admin';
+// Staff-only data: keep this query after the role guard above.
+$linkedEmails=[];
+foreach($auth->query('SELECT l.member_id,u.email FROM fc_web_links l JOIN dkp_users u ON u.id=l.web_user_id')->fetchAll() as $linkRow) {
+    $linkedEmails[(string)$linkRow['member_id']]=$linkRow['email'];
+}
+// Sort only display rows; names of columns never enter SQL.
+$sortColumns=['linked'=>'Связана','balance'=>'Всего','reserved'=>'В ставках','available'=>'Доступно'];
+$sort=is_string($_GET['sort']??null) && isset($sortColumns[$_GET['sort']])?$_GET['sort']:'';
+$direction=($_GET['direction']??'')==='desc'?'desc':'asc';
+$displayRoster=$roster;
+if($sort!=='') {
+    $sortValue=static function(array $row) use($sort,$linkedEmails):int {
+        return match($sort) {
+            'linked'=>isset($linkedEmails[(string)$row['member_id']])?1:0,
+            'available'=>(int)$row['balance']-(int)$row['reserved'],
+            default=>(int)$row[$sort],
+        };
+    };
+    // Stable sorting retains the original nickname order for equal values.
+    usort($displayRoster,static fn(array $a,array $b):int=>($direction==='desc'?-1:1)*($sortValue($a)<=>$sortValue($b)));
+}
+$sortHeading=static function(string $column) use($sortColumns,$sort,$direction):void {
+    $active=$sort===$column;$next=$active && $direction==='asc'?'desc':'asc';
+    $label=$sortColumns[$column];
+    echo '<th scope="col" aria-sort="'.($active?($direction==='asc'?'ascending':'descending'):'none').'"><a href="?page=manage&amp;sort='.$column.'&amp;direction='.$next.'" title="'.h($label.': сортировать по '.($next==='asc'?'возрастанию':'убыванию')).'">'.h($label).' '.($active?($direction==='asc'?'↑':'↓'):'↕').'</a></th>';
+};
 $accounts=$admin?$auth->query('SELECT u.id,u.email,u.nickname,u.role,l.member_id FROM dkp_users u LEFT JOIN fc_web_links l ON l.web_user_id=u.id WHERE u.verified_at IS NOT NULL ORDER BY u.id')->fetchAll():[];
 if (!function_exists('dkpForm')) { function dkpForm(string $kind):void {
  formStart('dkp_'.$kind);echo '<input type="hidden" name="request_key" value="'.bin2hex(random_bytes(32)).'">';
@@ -12,13 +38,22 @@ if (!function_exists('dkpForm')) { function dkpForm(string $kind):void {
 <p><a class="event-link" href="?page=auctions">Аукционы гильдии →</a></p>
 <h3>Состав · <?=count($roster)?></h3>
 <?php dkpForm('adjust'); ?>
-<div class="table-wrap"><table><thead><tr><th>Выбор</th><th>Участник</th><th>Всего</th><th>В ставках</th><th>Доступно</th></tr></thead><tbody>
-<?php foreach($roster as $r): ?><tr><td><input type="checkbox" name="member_<?=h((string)$r['member_id'])?>" value="1" aria-label="Выбрать <?=h($r['nickname'])?>"></td><td><?=h($r['nickname'])?></td><td><?=h((string)$r['balance'])?></td><td><?=h((string)$r['reserved'])?></td><td><?=h((string)((int)$r['balance']-(int)$r['reserved']))?></td></tr><?php endforeach; ?>
+<div class="table-wrap"><table><thead><tr><th>Выбор</th><th>Участник</th><?php $sortHeading('linked'); ?><th>Email</th><?php $sortHeading('balance');$sortHeading('reserved');$sortHeading('available'); ?></tr></thead><tbody>
+<?php foreach($displayRoster as $r): $linkedEmail=$linkedEmails[(string)$r['member_id']]??null; ?><tr><td><input type="checkbox" name="member_<?=h((string)$r['member_id'])?>" value="1" aria-label="Выбрать <?=h($r['nickname'])?>"></td><td><?=h($r['nickname'])?></td><td><?=$linkedEmail!==null?'Да':'Нет'?></td><td style="overflow-wrap:anywhere;min-width:160px;max-width:280px"><?=$linkedEmail!==null?h($linkedEmail):'—'?></td><td><?=h((string)$r['balance'])?></td><td><?=h((string)$r['reserved'])?></td><td><?=h((string)((int)$r['balance']-(int)$r['reserved']))?></td></tr><?php endforeach; ?>
 </tbody></table></div>
 <div class="form-grid"><label>Изменение ДКП каждому выбранному<input type="number" name="amount" required min="-1000000" max="1000000" step="1" placeholder="Например: 5 или -3"></label><label>Причина<input name="reason" required maxlength="500" placeholder="Например: вечернее ЧВ 14.09"></label></div>
 <label class="check"><input type="checkbox" name="confirmed" value="1" required> Проверил состав, знак и количество очков. Применить каждому выбранному.</label>
 <button>Применить изменение ДКП</button></form>
 <?php if($admin): ?>
+<details><summary>Удалить участника</summary>
+<p>Участник исчезнет из активного состава и открытых событий. Баланс, история и привязка аккаунта сохранятся. Новые ставки, отметки и начисления будут недоступны. Роль аккаунта не меняется — права офицера при необходимости сними в разделе «Офицеры и аккаунты».</p>
+<?php dkpForm('archive'); ?><label>Участник<select name="member" required><option value="">Выбери участника</option><?php foreach($roster as $r): ?><option value="<?=h((string)$r['member_id'])?>"><?=h($r['nickname'])?> · #<?=h((string)$r['member_id'])?></option><?php endforeach; ?></select></label>
+<label>Причина удаления<input name="reason" required maxlength="500"></label>
+<label class="check"><input type="checkbox" name="confirmed" value="1" required> Подтверждаю удаление из состава и открытых событий.</label><button>Удалить участника</button></form></details>
+<details><summary>Удалённые участники</summary><p>Можно восстановить профиль с прежним балансом и привязкой. В открытые события нужно записаться заново.</p>
+<?php $archived=$dkp->archivedRoster();if(!$archived): ?><p>Удалённых участников нет.</p><?php endif; ?>
+<?php foreach($archived as $r): ?><article class="operation"><strong><?=h($r['nickname'])?></strong> · #<?=h((string)$r['member_id'])?><p><?=h($r['reason'])?></p><?php dkpForm('restore'); ?><input type="hidden" name="member" value="<?=h((string)$r['member_id'])?>"><label class="check"><input type="checkbox" name="confirmed" value="1" required> Подтверждаю восстановление <?=h($r['nickname'])?>.</label><button>Восстановить участника</button></form></article><?php endforeach; ?></details>
+
 <details><summary>Добавить нового участника</summary><p>Создаёт игровой профиль с нулевым балансом. Аккаунт сайта можно привязать после регистрации.</p><?php dkpForm('create'); ?><label>Игровой ник<input name="nickname" required maxlength="32"></label><button>Добавить в состав</button></form></details>
 <details><summary>Привязать аккаунт к участнику</summary><p>Проверь владельца игрового профиля и его email. Ник аккаунта сам по себе не подтверждает владение.</p><?php dkpForm('link'); ?>
 <label>Игровой профиль<select name="member" required><option value="">Выбери участника</option><?php foreach($roster as $r): ?>
@@ -34,9 +69,10 @@ if (!function_exists('dkpForm')) { function dkpForm(string $kind):void {
 <details><summary>Последние операции на сайте</summary>
 <?php $ops=$auth->query('SELECT o.*,u.nickname AS actor FROM fc_operations o JOIN dkp_users u ON u.id=o.actor_id ORDER BY o.created_at DESC,o.request_key DESC LIMIT 50')->fetchAll();
 foreach($ops as $o): $d=json_decode($o['details'],true); ?>
-<article class="operation"><strong><?=h(['evt_auto'=>'Автоматическое ЧВ','evt_join'=>'Игрок отметил участие','evt_leave'=>'Игрок снял отметку','auc_create'=>'Открытие аукциона','auc_bid'=>'Ставка','auc_cancel'=>'Отмена аукциона','auc_close'=>'Автозавершение аукциона','evt_create'=>'Создание события','evt_save'=>'Изменение события','evt_award'=>'Награда за событие','evt_cancel'=>'Отмена события','adjust'=>'Изменение ДКП','link'=>'Привязка','role'=>'Роль','create'=>'Новый участник','bootstrap'=>'Администратор'][$o['kind']]??$o['kind'])?></strong> · <?=h(in_array($o['kind'],['auc_close','evt_auto'],true)?'Автоматически':$o['actor'])?><br><small><?=h((new DateTimeImmutable('@'.$o['created_at']))->setTimezone(new DateTimeZone('Europe/Moscow'))->format('d.m.Y H:i'))?> МСК</small>
+<article class="operation"><strong><?=h(['archive'=>'Удаление участника','restore'=>'Восстановление участника','evt_auto'=>'Автоматическое ЧВ','evt_join'=>'Игрок отметил участие','evt_leave'=>'Игрок снял отметку','auc_create'=>'Открытие аукциона','auc_bid'=>'Ставка','auc_cancel'=>'Отмена аукциона','auc_close'=>'Автозавершение аукциона','evt_create'=>'Создание события','evt_save'=>'Изменение события','evt_award'=>'Награда за событие','evt_cancel'=>'Отмена события','adjust'=>'Изменение ДКП','link'=>'Привязка','role'=>'Роль','create'=>'Новый участник','bootstrap'=>'Администратор'][$o['kind']]??$o['kind'])?></strong> · <?=h(in_array($o['kind'],['auc_close','evt_auto'],true)?'Автоматически':$o['actor'])?><br><small><?=h((new DateTimeImmutable('@'.$o['created_at']))->setTimezone(new DateTimeZone('Europe/Moscow'))->format('d.m.Y H:i'))?> МСК</small>
 <?php if(in_array($o['kind'],['adjust','evt_award'],true)): ?><p><?=h((string)$d['amount'])?> ДКП каждому: <?=h(implode(', ',array_values($d['members'])))?><br><?=h($d['reason'])?></p>
 <?php elseif(str_starts_with($o['kind'],'auc_')): ?><p><a href="?page=auctions&amp;auction=<?=h((string)$d['auction_id'])?>"><?=h($d['item'])?></a><?php if(isset($d['amount']))echo ' · '.h((string)$d['amount']).' ДКП';if(isset($d['reason']))echo '<br>'.h($d['reason']); ?></p>
 <?php elseif(str_starts_with($o['kind'],'evt_')): ?><p><a href="?page=events&amp;event=<?=h((string)$d['event_id'])?>"><?=h($d['title'])?></a><?php if(isset($d['nickname']))echo '<br>Участник: '.h($d['nickname']);if(isset($d['reason']))echo '<br>'.h($d['reason']); ?></p>
-<?php elseif($admin && is_array($d)): ?><p><?php if($o['kind']==='create') echo 'Участник: '.h($d['nickname']); elseif($o['kind']==='link') echo 'Аккаунт #'.h($d['account']).' → профиль '.h($d['member']); elseif($o['kind']==='role') echo 'Аккаунт #'.h($d['account']).' → '.h($d['role']==='officer'?'Офицер':'Участник'); ?></p><?php endif; ?></article>
+<?php elseif($admin && is_array($d)): ?><p><?php if(in_array($o['kind'],['archive','restore'],true)) echo h($d['nickname']).(isset($d['reason'])?' · '.h($d['reason']):''); elseif($o['kind']==='create') echo 'Участник: '.h($d['nickname']); elseif($o['kind']==='link') echo 'Аккаунт #'.h($d['account']).' → профиль '.h($d['member']); elseif($o['kind']==='role') echo 'Аккаунт #'.h($d['account']).' → '.h($d['role']==='officer'?'Офицер':'Участник'); ?></p><?php endif; ?></article>
 <?php endforeach; ?><small>Показаны последние 50 операций. Полный журнал сохраняется в базе.</small></details>
+

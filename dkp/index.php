@@ -4,6 +4,11 @@ ini_set('display_errors','0');
 header('Content-Type: text/html; charset=utf-8');
 header("Content-Security-Policy: default-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; script-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'");
 header('Referrer-Policy: no-referrer'); header('X-Content-Type-Options: nosniff'); header('Cache-Control: no-store');
+// Cheap rejection before database, session creation and password hashing.
+$method=$_SERVER['REQUEST_METHOD']??'GET';
+if(!in_array($method,['GET','HEAD','POST'],true)){http_response_code(405);header('Allow: GET, HEAD, POST');exit('Метод не поддерживается.');}
+if((int)($_SERVER['CONTENT_LENGTH']??0)>8192){http_response_code(413);exit('Слишком большой запрос.');}
+if($method==='POST')foreach($_POST as $value)if(!is_string($value)){http_response_code(400);exit('Некорректный запрос.');}
 require __DIR__.'/auth.php';
 require __DIR__.'/dkp_store.php';
 function h(string $s): string { return htmlspecialchars($s, ENT_QUOTES|ENT_SUBSTITUTE, 'UTF-8'); }
@@ -19,13 +24,21 @@ try {
     if (!preg_match('~^https://[a-z0-9.-]+$~iD',$origin)) throw new RuntimeException('Invalid origin');
     if (($_SERVER['HTTPS']??'') !== 'on' && ($_SERVER['HTTPS']??'') !== '1') { header('Location: '.$origin.'/dkp/',true,302); exit; }
     if (!filter_var($config['mail_from'], FILTER_VALIDATE_EMAIL) || preg_match('/[\r\n]/',$config['mail_from'])) throw new RuntimeException('Invalid sender');
-    ini_set('session.use_strict_mode','1'); ini_set('session.use_only_cookies','1');
-    session_name('FC_DKP'); session_set_cookie_params(['lifetime'=>0,'path'=>'/dkp','secure'=>true,'httponly'=>true,'samesite'=>'Lax']); session_start();
-    $_SESSION['csrf']??=bin2hex(random_bytes(32));
     $db=new PDO($config['dsn'],$config['db_user'],$config['db_password'],[PDO::ATTR_TIMEOUT=>5]);
     $auth=new Auth($db,$origin,static function(string $to,string $subject,string $body) use($config):bool {
         return mail($to,'=?UTF-8?B?'.base64_encode($subject).'?=',$body,['From'=>$config['mail_from'],'Content-Type'=>'text/plain; charset=UTF-8','MIME-Version'=>'1.0']);
     });
+    // REMOTE_ADDR must be restored by the hosting proxy; never trust client headers.
+    try {
+        $ip=$_SERVER['REMOTE_ADDR']??'unknown';
+        $auth->rate('request-ip:'.$ip,120,60);
+        if($method==='POST')$auth->rate('post-burst-ip:'.$ip,30,60);
+    } catch(AuthError $e) {
+        http_response_code(429);header('Retry-After: 60');exit('Слишком много запросов. Подожди минуту и повтори.');
+    }
+    ini_set('session.use_strict_mode','1'); ini_set('session.use_only_cookies','1');
+    session_name('FC_DKP'); session_set_cookie_params(['lifetime'=>0,'path'=>'/dkp','secure'=>true,'httponly'=>true,'samesite'=>'Lax']); session_start();
+    $_SESSION['csrf']??=bin2hex(random_bytes(32));
     $auth->query('SELECT id FROM dkp_users LIMIT 1');
     if (isset($_SESSION['uid'])) {
         $user=$auth->user((int)$_SESSION['uid']);
@@ -61,13 +74,14 @@ if ($ready && $_SERVER['REQUEST_METHOD']==='POST') {
         if (str_starts_with($action,'dkp_')) {
             if (!$user) throw new AuthError('Войди в кабинет.');
             $kind=substr($action,4);
-            if (in_array($kind,['adjust','link','evt_award','evt_cancel','auc_bid','auc_cancel'],true) && ($_POST['confirmed']??'')!=='1') throw new AuthError('Подтверди проверку данных.');
+            if (in_array($kind,['archive','restore','adjust','link','evt_award','evt_cancel','auc_bid','auc_cancel'],true) && ($_POST['confirmed']??'')!=='1') throw new AuthError('Подтверди проверку данных.');
             $payload=[];
             if ($kind==='adjust') {
                 $ids=[]; foreach($_POST as $key=>$value) if(str_starts_with($key,'member_') && $value==='1') $ids[]=substr($key,7);
                 sort($ids,SORT_STRING);$payload=['members'=>$ids,'amount'=>$_POST['amount']??'','reason'=>$_POST['reason']??''];
             } elseif($kind==='link') $payload=['member'=>$_POST['member']??'','account'=>$_POST['account']??''];
             elseif($kind==='role') $payload=['account'=>$_POST['account']??'','role'=>$_POST['role']??''];
+            elseif(in_array($kind,['archive','restore'],true)) $payload=['member'=>$_POST['member']??'','reason'=>$_POST['reason']??''];
             elseif($kind==='create') $payload=['nickname'=>$_POST['nickname']??''];
             if(str_starts_with($kind,'evt_')) {
                 $payload=['event'=>$_POST['event']??'','revision'=>$_POST['revision']??''];
@@ -89,11 +103,12 @@ if ($ready && $_SERVER['REQUEST_METHOD']==='POST') {
             go('manage',$changed?'Изменения сохранены.':'Эта операция уже выполнена. Повторно ничего не изменено.');
         }
         switch($action) {
-            case 'register': $auth->register($email,$_POST['nickname']??'',$password); go('login','Если регистрация доступна для этого email, письмо с подтверждением отправлено. Проверь также папку «Спам».');
+            case 'register': $auth->register($email,$_POST['nickname']??'',$password,($_POST['new_member']??'')==='1'); go('login','Если регистрация доступна для этого email, письмо с подтверждением отправлено. Проверь также папку «Спам».');
             case 'forgot': case 'resend': $auth->requestToken($email,$action==='forgot'?'reset':'verify'); go($action,'Если для этого email доступно действие, письмо отправлено. Проверь также папку «Спам».');
             case 'verify': case 'reset':
                 $auth->redeem($_SESSION[$action.'_token']??'',$action,$password); unset($_SESSION[$action.'_token']); go('login',$action==='verify'?'Email подтверждён. Теперь можно войти.':'Пароль изменён. Войди с новым паролем.');
             case 'login':
+                $auth->rate('login-ip:'.($_SERVER['REMOTE_ADDR']??''),20);
                 $auth->rate('login:'.Auth::email($email),10); $u=$auth->login($email,$password);
                 session_regenerate_id(true); $_SESSION=['uid'=>(int)$u['id'],'version'=>(int)$u['session_version'],'born'=>time(),'last'=>time(),'csrf'=>bin2hex(random_bytes(32))]; go('profile');
             case 'logout': $_SESSION=[]; session_regenerate_id(true); $_SESSION['csrf']=bin2hex(random_bytes(32)); go('login','Ты вышел из кабинета.');
@@ -135,6 +150,7 @@ function formStart(string $action):void { echo '<form method="post"><input type=
 <?php if(in_array($user['role'],['admin','officer'],true)): ?><p><a href="?page=manage">Управление ДКП →</a></p><?php endif; ?>
 <p><a href="?page=events">События · отметить участие →</a></p>
 <p><a href="?page=auctions">Аукционы гильдии →</a></p>
+<?php if($auth->query("SELECT web_user_id FROM fc_registration_members WHERE web_user_id=? AND status='conflict'",[$user['id']])->fetchColumn() && !$auth->query('SELECT member_id FROM fc_web_links WHERE web_user_id=?',[$user['id']])->fetchColumn()): ?><p role="status">Email подтверждён, но такой игровой ник уже есть в составе. Новый профиль не создан. Попроси администратора проверить и привязать твой аккаунт.</p><?php endif; ?>
 <?php require __DIR__.'/migration_view.php'; ?>
 <details><summary>Изменить игровой ник</summary><?php formStart('nickname'); field('nickname','Новый ник','text','nickname'); ?><button>Сохранить ник</button></form></details>
 <details><summary>Изменить пароль</summary><?php formStart('password'); field('old_password','Текущий пароль','password','current-password'); field('password','Новый пароль · от 12 символов','password','new-password'); ?><button>Изменить пароль</button></form></details>
@@ -142,7 +158,10 @@ function formStart(string $action):void { echo '<form method="post"><input type=
 <?php else:
 formStart($page);
 if(in_array($page,['login','register','forgot','resend'],true)) field('email','Email','email','email');
-if($page==='register') field('nickname','Игровой ник','text','nickname');
+if($page==='register') {
+    field('nickname','Игровой ник','text','nickname');
+    echo '<label class="check"><input type="checkbox" name="new_member" value="1"'.(($_POST['new_member']??'')==='1'?' checked':'').'> Новый участник гильдии</label><small>После подтверждения email создадим и привяжем профиль ДКП с этим ником и нулевым балансом. Если ты уже есть в составе, оставь галочку пустой и попроси администратора привязать аккаунт.</small>';
+}
 if(in_array($page,['login','register','verify','reset'],true)) field('password',in_array($page,['register','reset'],true)?'Пароль · от 12 символов':'Пароль','password',in_array($page,['register','reset'],true)?'new-password':'current-password');
 $buttons=['login'=>'Войти в кабинет','register'=>'Зарегистрироваться','forgot'=>'Отправить ссылку','resend'=>'Отправить письмо','verify'=>'Подтвердить email','reset'=>'Сохранить новый пароль']; ?>
 <button><?=h($buttons[$page])?> <span>→</span></button></form>

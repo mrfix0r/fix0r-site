@@ -37,7 +37,7 @@ trait DKPEvents {
         if(in_array($kind,['evt_join','evt_leave'],true)) {
             $link=$this->a->query('SELECT member_id FROM fc_web_links WHERE web_user_id=?',[$actor])->fetch();
             if(!$link)throw new AuthError('Попроси главу гильдии привязать аккаунт к твоему игровому профилю.');
-            $member=(string)$link['member_id'];
+            $member=(string)$link['member_id'];$this->requireActive($member);
             $joined=false;foreach($e['members'] as $row)if((string)$row['member_id']===$member)$joined=true;
             if($kind==='evt_join') {
                 if($joined)throw new AuthError('Ты уже в списке участников. Повторная отметка не нужна.');
@@ -58,6 +58,7 @@ trait DKPEvents {
             if(!is_array($ids) || count($ids)>100)throw new AuthError('Можно выбрать до 100 участников.');
             $ids=array_values(array_unique(array_map(fn($v)=>self::id((string)$v),$ids)));sort($ids,SORT_STRING);$names=[];
             foreach($ids as $member) {
+                $this->requireActive($member);
                 $name=$this->a->query('SELECT nickname FROM fc_roster WHERE member_id=?',[$member])->fetchColumn();
                 if($name===false)throw new AuthError('Участник не найден. Обнови состав.');$names[$member]=$name;
             }
@@ -69,7 +70,7 @@ trait DKPEvents {
         if($kind==='evt_award') {
             if(!$e['members'])throw new AuthError('Сначала сохрани список участников. Пустому событию нельзя выдать награду.');
             if(count($e['members'])>100)throw new AuthError('Слишком много участников.');
-            $names=[];foreach($e['members'] as $member)$names[(string)$member['member_id']]=$member['nickname'];
+            $names=[];foreach($e['members'] as $member){$this->requireActive((string)$member['member_id']);$names[(string)$member['member_id']]=$member['nickname'];}
             $this->a->query("UPDATE fc_events SET status='awarded',closed_at=?,closed_by=?,revision=revision+1 WHERE id=?",[time(),$actor,$id]);
             return ['event_id'=>$id,'title'=>$e['title'],'amount'=>(int)$e['points'],'members'=>$names,'reason'=>'Событие #'.$id.': '.$e['title']];
         }
