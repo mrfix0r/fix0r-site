@@ -1,6 +1,11 @@
 <?php
 if (!isset($user,$dkp) || !$user || !in_array($user['role'],['admin','officer'],true)) { http_response_code(403);exit; }
 $roster=$dkp->roster();$admin=$user['role']==='admin';
+// Staff-only data: keep this query after the role guard above.
+$linkedEmails=[];
+foreach($auth->query('SELECT l.member_id,u.email FROM fc_web_links l JOIN dkp_users u ON u.id=l.web_user_id')->fetchAll() as $linkRow) {
+    $linkedEmails[(string)$linkRow['member_id']]=$linkRow['email'];
+}
 $accounts=$admin?$auth->query('SELECT u.id,u.email,u.nickname,u.role,l.member_id FROM dkp_users u LEFT JOIN fc_web_links l ON l.web_user_id=u.id WHERE u.verified_at IS NOT NULL ORDER BY u.id')->fetchAll():[];
 if (!function_exists('dkpForm')) { function dkpForm(string $kind):void {
  formStart('dkp_'.$kind);echo '<input type="hidden" name="request_key" value="'.bin2hex(random_bytes(32)).'">';
@@ -12,8 +17,8 @@ if (!function_exists('dkpForm')) { function dkpForm(string $kind):void {
 <p><a class="event-link" href="?page=auctions">Аукционы гильдии →</a></p>
 <h3>Состав · <?=count($roster)?></h3>
 <?php dkpForm('adjust'); ?>
-<div class="table-wrap"><table><thead><tr><th>Выбор</th><th>Участник</th><th>Всего</th><th>В ставках</th><th>Доступно</th></tr></thead><tbody>
-<?php foreach($roster as $r): ?><tr><td><input type="checkbox" name="member_<?=h((string)$r['member_id'])?>" value="1" aria-label="Выбрать <?=h($r['nickname'])?>"></td><td><?=h($r['nickname'])?></td><td><?=h((string)$r['balance'])?></td><td><?=h((string)$r['reserved'])?></td><td><?=h((string)((int)$r['balance']-(int)$r['reserved']))?></td></tr><?php endforeach; ?>
+<div class="table-wrap"><table><thead><tr><th>Выбор</th><th>Участник</th><th>Связана</th><th>Email</th><th>Всего</th><th>В ставках</th><th>Доступно</th></tr></thead><tbody>
+<?php foreach($roster as $r): $linkedEmail=$linkedEmails[(string)$r['member_id']]??null; ?><tr><td><input type="checkbox" name="member_<?=h((string)$r['member_id'])?>" value="1" aria-label="Выбрать <?=h($r['nickname'])?>"></td><td><?=h($r['nickname'])?></td><td><?=$linkedEmail!==null?'Да':'Нет'?></td><td style="overflow-wrap:anywhere;min-width:160px;max-width:280px"><?=$linkedEmail!==null?h($linkedEmail):'—'?></td><td><?=h((string)$r['balance'])?></td><td><?=h((string)$r['reserved'])?></td><td><?=h((string)((int)$r['balance']-(int)$r['reserved']))?></td></tr><?php endforeach; ?>
 </tbody></table></div>
 <div class="form-grid"><label>Изменение ДКП каждому выбранному<input type="number" name="amount" required min="-1000000" max="1000000" step="1" placeholder="Например: 5 или -3"></label><label>Причина<input name="reason" required maxlength="500" placeholder="Например: вечернее ЧВ 14.09"></label></div>
 <label class="check"><input type="checkbox" name="confirmed" value="1" required> Проверил состав, знак и количество очков. Применить каждому выбранному.</label>
@@ -40,3 +45,4 @@ foreach($ops as $o): $d=json_decode($o['details'],true); ?>
 <?php elseif(str_starts_with($o['kind'],'evt_')): ?><p><a href="?page=events&amp;event=<?=h((string)$d['event_id'])?>"><?=h($d['title'])?></a><?php if(isset($d['nickname']))echo '<br>Участник: '.h($d['nickname']);if(isset($d['reason']))echo '<br>'.h($d['reason']); ?></p>
 <?php elseif($admin && is_array($d)): ?><p><?php if($o['kind']==='create') echo 'Участник: '.h($d['nickname']); elseif($o['kind']==='link') echo 'Аккаунт #'.h($d['account']).' → профиль '.h($d['member']); elseif($o['kind']==='role') echo 'Аккаунт #'.h($d['account']).' → '.h($d['role']==='officer'?'Офицер':'Участник'); ?></p><?php endif; ?></article>
 <?php endforeach; ?><small>Показаны последние 50 операций. Полный журнал сохраняется в базе.</small></details>
+
