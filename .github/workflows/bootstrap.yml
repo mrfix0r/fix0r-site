@@ -24,7 +24,7 @@ jobs:
 
           cat .bootstrap/site.part.* | base64 --decode > /tmp/fix0r-site.tar.xz
           echo "781e6357f634e0968e70c79897e7d70b9bb968eed4d489acfb5910b46ba36d02  /tmp/fix0r-site.tar.xz" | sha256sum -c -
-          tar -xJf /tmp/fix0r-site.tar.xz -C .
+          tar --warning=no-timestamp -xJf /tmp/fix0r-site.tar.xz -C .
 
           mkdir -p fonts/source
           FONT_BASE="https://raw.githubusercontent.com/ArtifexSoftware/urw-base35-fonts/3c0ba3b5687632dfc66526544a4e811fe0ec0cd9/fonts"
@@ -39,12 +39,12 @@ jobs:
             -o fonts/LICENSE.txt
 
           cat > /tmp/fix0r-fonts.sha256 <<'HASHES'
-          80c80e93a55db717d6e72cfe352b9b84c9283a438ececf9184f220099545c24b  fonts/URWGothic-Book.otf
-          0f06aabbc634251aaa7050df20d7cdff188396f653c2882d9f10aaa23385ca35  fonts/URWGothic-Demi.otf
-          a302061716832dc046829eb4a9b345b7fc2e6a3bab3af65c578b6ec7d1fccb6f  fonts/source/URWGothic-Book.afm
-          e7918314d8b13b5852135ee539825233875469abf7fefac84d8ffa8ef9c39a00  fonts/source/URWGothic-Book.t1
-          db9b81acb7cbb1544c793688096856ad3ae5fc65b27465005804fc0fb2a8d0b5  fonts/source/URWGothic-Demi.afm
-          06a43749e968c94c0dfd47bd52e4e6aef595e13aca1b53512738597438092603  fonts/source/URWGothic-Demi.t1
+          04318316cee29950805110c9c8949eea189ef5575132881f4d4d7e03e5299903  fonts/URWGothic-Book.otf
+          5b009410cf5231dcb1e45b155c1afedcfc63d82042fd8c414d0dd7705c9fbbae  fonts/URWGothic-Demi.otf
+          6372963f2bc62765d9b3827418c434d7aa6617fa14cb3a878e97c8bec11fbfae  fonts/source/URWGothic-Book.afm
+          aebc5a18ff50235f0850b3812d86a29d18932c4bb8a097b004b8abafc433a395  fonts/source/URWGothic-Book.t1
+          b5f1a65e1505498c144f3d7dac11b0f197f8fd1b812c7f8641af46c40c7771f3  fonts/source/URWGothic-Demi.afm
+          83cb6f17a042dea63345e222593be1a1ccb13ded278482d13f6511cad0768c54  fonts/source/URWGothic-Demi.t1
           1315a62758a603a3e6e87a79b8389563789c59c1740b9db8bc2b20e2e2145458  fonts/LICENSE.txt
           HASHES
           sha256sum -c /tmp/fix0r-fonts.sha256
