@@ -61,13 +61,14 @@ if ($ready && $_SERVER['REQUEST_METHOD']==='POST') {
         if (str_starts_with($action,'dkp_')) {
             if (!$user) throw new AuthError('Войди в кабинет.');
             $kind=substr($action,4);
-            if (in_array($kind,['adjust','link','evt_award','evt_cancel','auc_bid','auc_cancel'],true) && ($_POST['confirmed']??'')!=='1') throw new AuthError('Подтверди проверку данных.');
+            if (in_array($kind,['archive','restore','adjust','link','evt_award','evt_cancel','auc_bid','auc_cancel'],true) && ($_POST['confirmed']??'')!=='1') throw new AuthError('Подтверди проверку данных.');
             $payload=[];
             if ($kind==='adjust') {
                 $ids=[]; foreach($_POST as $key=>$value) if(str_starts_with($key,'member_') && $value==='1') $ids[]=substr($key,7);
                 sort($ids,SORT_STRING);$payload=['members'=>$ids,'amount'=>$_POST['amount']??'','reason'=>$_POST['reason']??''];
             } elseif($kind==='link') $payload=['member'=>$_POST['member']??'','account'=>$_POST['account']??''];
             elseif($kind==='role') $payload=['account'=>$_POST['account']??'','role'=>$_POST['role']??''];
+            elseif(in_array($kind,['archive','restore'],true)) $payload=['member'=>$_POST['member']??'','reason'=>$_POST['reason']??''];
             elseif($kind==='create') $payload=['nickname'=>$_POST['nickname']??''];
             if(str_starts_with($kind,'evt_')) {
                 $payload=['event'=>$_POST['event']??'','revision'=>$_POST['revision']??''];

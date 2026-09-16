@@ -68,7 +68,7 @@ trait DKPAuctions {
         if($kind!=='auc_bid')throw new AuthError('Неизвестное действие аукциона.');
         $link=$this->a->query('SELECT member_id FROM fc_web_links WHERE web_user_id=?',[$actor])->fetch();
         if(!$link)throw new AuthError('Сначала попроси главу гильдии привязать аккаунт к участнику.');
-        $member=(string)$link['member_id'];$amount=filter_var($p['amount']??'',FILTER_VALIDATE_INT);
+        $member=(string)$link['member_id'];$this->requireActive($member);$amount=filter_var($p['amount']??'',FILTER_VALIDATE_INT);
         $needed=$lot['highest_member']===null?(int)$lot['minimum']:(int)$lot['highest_bid']+(int)$lot['bid_step'];
         if($amount===false || $amount<$needed || $amount>1000000)throw new AuthError('Ставка должна быть не ниже '.$needed.' ДКП и не выше 1000000.');
         $available=$this->balance($member)-$this->reserved($member,$id);
