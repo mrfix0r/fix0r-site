@@ -6,6 +6,27 @@ $linkedEmails=[];
 foreach($auth->query('SELECT l.member_id,u.email FROM fc_web_links l JOIN dkp_users u ON u.id=l.web_user_id')->fetchAll() as $linkRow) {
     $linkedEmails[(string)$linkRow['member_id']]=$linkRow['email'];
 }
+// Sort only display rows; names of columns never enter SQL.
+$sortColumns=['linked'=>'Связана','balance'=>'Всего','reserved'=>'В ставках','available'=>'Доступно'];
+$sort=is_string($_GET['sort']??null) && isset($sortColumns[$_GET['sort']])?$_GET['sort']:'';
+$direction=($_GET['direction']??'')==='desc'?'desc':'asc';
+$displayRoster=$roster;
+if($sort!=='') {
+    $sortValue=static function(array $row) use($sort,$linkedEmails):int {
+        return match($sort) {
+            'linked'=>isset($linkedEmails[(string)$row['member_id']])?1:0,
+            'available'=>(int)$row['balance']-(int)$row['reserved'],
+            default=>(int)$row[$sort],
+        };
+    };
+    // Stable sorting retains the original nickname order for equal values.
+    usort($displayRoster,static fn(array $a,array $b):int=>($direction==='desc'?-1:1)*($sortValue($a)<=>$sortValue($b)));
+}
+$sortHeading=static function(string $column) use($sortColumns,$sort,$direction):void {
+    $active=$sort===$column;$next=$active && $direction==='asc'?'desc':'asc';
+    $label=$sortColumns[$column];
+    echo '<th scope="col" aria-sort="'.($active?($direction==='asc'?'ascending':'descending'):'none').'"><a href="?page=manage&amp;sort='.$column.'&amp;direction='.$next.'" title="'.h($label.': сортировать по '.($next==='asc'?'возрастанию':'убыванию')).'">'.h($label).' '.($active?($direction==='asc'?'↑':'↓'):'↕').'</a></th>';
+};
 $accounts=$admin?$auth->query('SELECT u.id,u.email,u.nickname,u.role,l.member_id FROM dkp_users u LEFT JOIN fc_web_links l ON l.web_user_id=u.id WHERE u.verified_at IS NOT NULL ORDER BY u.id')->fetchAll():[];
 if (!function_exists('dkpForm')) { function dkpForm(string $kind):void {
  formStart('dkp_'.$kind);echo '<input type="hidden" name="request_key" value="'.bin2hex(random_bytes(32)).'">';
@@ -17,8 +38,8 @@ if (!function_exists('dkpForm')) { function dkpForm(string $kind):void {
 <p><a class="event-link" href="?page=auctions">Аукционы гильдии →</a></p>
 <h3>Состав · <?=count($roster)?></h3>
 <?php dkpForm('adjust'); ?>
-<div class="table-wrap"><table><thead><tr><th>Выбор</th><th>Участник</th><th>Связана</th><th>Email</th><th>Всего</th><th>В ставках</th><th>Доступно</th></tr></thead><tbody>
-<?php foreach($roster as $r): $linkedEmail=$linkedEmails[(string)$r['member_id']]??null; ?><tr><td><input type="checkbox" name="member_<?=h((string)$r['member_id'])?>" value="1" aria-label="Выбрать <?=h($r['nickname'])?>"></td><td><?=h($r['nickname'])?></td><td><?=$linkedEmail!==null?'Да':'Нет'?></td><td style="overflow-wrap:anywhere;min-width:160px;max-width:280px"><?=$linkedEmail!==null?h($linkedEmail):'—'?></td><td><?=h((string)$r['balance'])?></td><td><?=h((string)$r['reserved'])?></td><td><?=h((string)((int)$r['balance']-(int)$r['reserved']))?></td></tr><?php endforeach; ?>
+<div class="table-wrap"><table><thead><tr><th>Выбор</th><th>Участник</th><?php $sortHeading('linked'); ?><th>Email</th><?php $sortHeading('balance');$sortHeading('reserved');$sortHeading('available'); ?></tr></thead><tbody>
+<?php foreach($displayRoster as $r): $linkedEmail=$linkedEmails[(string)$r['member_id']]??null; ?><tr><td><input type="checkbox" name="member_<?=h((string)$r['member_id'])?>" value="1" aria-label="Выбрать <?=h($r['nickname'])?>"></td><td><?=h($r['nickname'])?></td><td><?=$linkedEmail!==null?'Да':'Нет'?></td><td style="overflow-wrap:anywhere;min-width:160px;max-width:280px"><?=$linkedEmail!==null?h($linkedEmail):'—'?></td><td><?=h((string)$r['balance'])?></td><td><?=h((string)$r['reserved'])?></td><td><?=h((string)((int)$r['balance']-(int)$r['reserved']))?></td></tr><?php endforeach; ?>
 </tbody></table></div>
 <div class="form-grid"><label>Изменение ДКП каждому выбранному<input type="number" name="amount" required min="-1000000" max="1000000" step="1" placeholder="Например: 5 или -3"></label><label>Причина<input name="reason" required maxlength="500" placeholder="Например: вечернее ЧВ 14.09"></label></div>
 <label class="check"><input type="checkbox" name="confirmed" value="1" required> Проверил состав, знак и количество очков. Применить каждому выбранному.</label>
