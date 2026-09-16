@@ -1,0 +1,62 @@
+name: Import cleaned site
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/bootstrap.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Restore and verify repository
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          cat .bootstrap/site.part.* | base64 --decode > /tmp/fix0r-site.tar.xz
+          echo "781e6357f634e0968e70c79897e7d70b9bb968eed4d489acfb5910b46ba36d02  /tmp/fix0r-site.tar.xz" | sha256sum -c -
+          tar -xJf /tmp/fix0r-site.tar.xz -C .
+
+          mkdir -p fonts/source
+          FONT_BASE="https://raw.githubusercontent.com/ArtifexSoftware/urw-base35-fonts/3c0ba3b5687632dfc66526544a4e811fe0ec0cd9/fonts"
+          curl --fail --location --silent --show-error "$FONT_BASE/URWGothic-Book.otf" -o fonts/URWGothic-Book.otf
+          curl --fail --location --silent --show-error "$FONT_BASE/URWGothic-Demi.otf" -o fonts/URWGothic-Demi.otf
+          curl --fail --location --silent --show-error "$FONT_BASE/URWGothic-Book.afm" -o fonts/source/URWGothic-Book.afm
+          curl --fail --location --silent --show-error "$FONT_BASE/URWGothic-Book.t1" -o fonts/source/URWGothic-Book.t1
+          curl --fail --location --silent --show-error "$FONT_BASE/URWGothic-Demi.afm" -o fonts/source/URWGothic-Demi.afm
+          curl --fail --location --silent --show-error "$FONT_BASE/URWGothic-Demi.t1" -o fonts/source/URWGothic-Demi.t1
+          curl --fail --location --silent --show-error \
+            "https://raw.githubusercontent.com/cbhua/matplotlib-prefab/ba90fda1be2ba37d13ff1c00f0fc9a573b28de15/web/public/generated/fonts/LICENCE-urw-base35.txt" \
+            -o fonts/LICENSE.txt
+
+          cat > /tmp/fix0r-fonts.sha256 <<'HASHES'
+          80c80e93a55db717d6e72cfe352b9b84c9283a438ececf9184f220099545c24b  fonts/URWGothic-Book.otf
+          0f06aabbc634251aaa7050df20d7cdff188396f653c2882d9f10aaa23385ca35  fonts/URWGothic-Demi.otf
+          a302061716832dc046829eb4a9b345b7fc2e6a3bab3af65c578b6ec7d1fccb6f  fonts/source/URWGothic-Book.afm
+          e7918314d8b13b5852135ee539825233875469abf7fefac84d8ffa8ef9c39a00  fonts/source/URWGothic-Book.t1
+          db9b81acb7cbb1544c793688096856ad3ae5fc65b27465005804fc0fb2a8d0b5  fonts/source/URWGothic-Demi.afm
+          06a43749e968c94c0dfd47bd52e4e6aef595e13aca1b53512738597438092603  fonts/source/URWGothic-Demi.t1
+          1315a62758a603a3e6e87a79b8389563789c59c1740b9db8bc2b20e2e2145458  fonts/LICENSE.txt
+          HASHES
+          sha256sum -c /tmp/fix0r-fonts.sha256
+
+          rm -rf .bootstrap .github/workflows/bootstrap.yml
+          rmdir .github/workflows 2>/dev/null || true
+          rmdir .github 2>/dev/null || true
+
+          test "$(find . -path './.git' -prune -o -type f -print | wc -l)" -eq 31
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Import cleaned Fix0r site source"
+          git push
