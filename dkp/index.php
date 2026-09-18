@@ -12,6 +12,7 @@ if($method==='POST')foreach($_POST as $value)if(!is_string($value)){http_respons
 require __DIR__.'/auth.php';
 require __DIR__.'/dkp_store.php';
 require __DIR__.'/announcements_store.php';
+require __DIR__.'/telegram_store.php';
 function h(string $s): string { return htmlspecialchars($s, ENT_QUOTES|ENT_SUBSTITUTE, 'UTF-8'); }
 function go(string $page, string $message=''): never { if ($message) $_SESSION['flash']=$message; header('Location: /dkp/?page='.$page, true, 303); exit; }
 function field(string $name,string $label,string $type='text',string $auto=''): void {
@@ -48,6 +49,8 @@ try {
         } else $_SESSION['last']=time();
     }
     $dkp=new DKP($auth);$announcements=new Announcements($auth);
+    $tgConfig=is_file(__DIR__.'/telegram_config.php')?require __DIR__.'/telegram_config.php':[];
+    $telegram=new TelegramGuild($auth,is_array($tgConfig)?$tgConfig:[],$origin);
     $auctionWarning='';
     if($user)try{$dkp->settleDue();}catch(Throwable $e){error_log('DKP settlement: '.get_class($e).' code='.$e->getCode());$auctionWarning='Не удалось завершить истёкшие аукционы. Ставки остаются в резерве. Сообщи администратору.';}
     $ready=true;
@@ -71,6 +74,19 @@ if ($ready && $_SERVER['REQUEST_METHOD']==='POST') {
         if (in_array($action,['register','forgot','resend'],true)) {
             $auth->rate('mail-ip:'.($_SERVER['REMOTE_ADDR']??''),10);
             $auth->rate('mail-email:'.Auth::email($email),3);
+        }
+        if(in_array($action,['tg_link','tg_unlink','tg_notify'],true)) {
+            if(!$user)throw new AuthError('Войди в кабинет.');
+            if($action==='tg_link'){
+                $_SESSION['tg_link']=$telegram->startLink((int)$user['id'],$_SESSION['version']);
+                go('profile','Ссылка на бота готова. Раскрой раздел Telegram, открой бота и нажми Start.');
+            }
+            if($action==='tg_unlink'){
+                $telegram->unlink((int)$user['id'],$_SESSION['version']);unset($_SESSION['tg_link']);go('profile','Telegram отвязан, подписка отключена.');
+            }
+            if(($_POST['confirmed']??'')!=='1')throw new AuthError('Подтверди отправку подписавшимся участникам.');
+            $count=$telegram->queue((int)$user['id'],$_SESSION['version'],$_POST['id']??'',$_POST['revision']??'');
+            go('announcements&announcement='.DKP::id($_POST['id']), 'В очередь добавлено сообщений: '.$count.'.');
         }
         if(str_starts_with($action,'ann_')) {
             if(!$user)throw new AuthError('Войди в кабинет.');
@@ -160,6 +176,7 @@ function formStart(string $action):void { echo '<form method="post"><input type=
 <?php require __DIR__.'/profile_overview.php'; ?>
 <?php if($auth->query("SELECT web_user_id FROM fc_registration_members WHERE web_user_id=? AND status='conflict'",[$user['id']])->fetchColumn() && !$auth->query('SELECT member_id FROM fc_web_links WHERE web_user_id=?',[$user['id']])->fetchColumn()): ?><p role="status">Email подтверждён, но такой игровой ник уже есть в составе. Новый профиль не создан. Попроси администратора проверить и привязать твой аккаунт.</p><?php endif; ?>
 <?php require __DIR__.'/migration_view.php'; ?>
+<?php require __DIR__.'/telegram_profile.php'; ?>
 <details><summary>Изменить игровой ник</summary><?php formStart('nickname'); field('nickname','Новый ник','text','nickname'); ?><button>Сохранить ник</button></form></details>
 <details><summary>Изменить пароль</summary><?php formStart('password'); field('old_password','Текущий пароль','password','current-password'); field('password','Новый пароль · от 12 символов','password','new-password'); ?><button>Изменить пароль</button></form></details>
 <?php formStart('logout'); ?><button class="secondary">Выйти</button></form>
@@ -178,6 +195,7 @@ $buttons=['login'=>'Войти в кабинет','register'=>'Зарегист�
 <?php if($page==='register'): ?><small>Потребуется подтвердить email. Используй отдельный пароль для сайта.</small><?php endif; ?>
 <?php endif; endif; ?>
 </section></main><footer>FC · TrustTheGame <span>Таверна открыта</span></footer></body></html>
+
 
 
 

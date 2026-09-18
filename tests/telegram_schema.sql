@@ -1,0 +1,12 @@
+CREATE TABLE dkp_users(id INTEGER PRIMARY KEY,email TEXT,nickname TEXT,role TEXT,verified_at INTEGER,session_version INTEGER);
+INSERT INTO dkp_users VALUES(1,'admin@example.test','Admin','admin',1,1),(2,'officer@example.test','Officer','officer',1,1),(3,'one@example.test','One','member',1,1),(4,'free@example.test','Free','member',1,1),(5,'two@example.test','Two','member',1,1);
+CREATE TABLE fc_roster(member_id INTEGER PRIMARY KEY,nickname TEXT);INSERT INTO fc_roster VALUES(10,'One'),(11,'Two');
+CREATE TABLE fc_web_links(web_user_id INTEGER PRIMARY KEY,member_id INTEGER UNIQUE);INSERT INTO fc_web_links VALUES(3,10),(5,11);
+CREATE TABLE fc_member_archive(member_id INTEGER PRIMARY KEY);
+CREATE TABLE fc_write_lock(id INTEGER PRIMARY KEY,revision INTEGER);INSERT INTO fc_write_lock VALUES(1,0);
+CREATE TABLE fc_announcements(id INTEGER PRIMARY KEY,title TEXT,body TEXT,revision INTEGER,archived INTEGER DEFAULT 0,expires_at INTEGER);
+CREATE TABLE fc_tg_state(id INTEGER PRIMARY KEY,update_offset INTEGER DEFAULT 0,bot_id INTEGER,last_success INTEGER,lease_until INTEGER DEFAULT 0,lease_token TEXT DEFAULT '',cooldown_until INTEGER DEFAULT 0);INSERT INTO fc_tg_state(id) VALUES(1);
+CREATE TABLE fc_tg_tokens(token_hash TEXT PRIMARY KEY,web_user_id INTEGER UNIQUE,member_id INTEGER,session_version INTEGER,expires_at INTEGER);
+CREATE TABLE fc_tg_subscriptions(member_id INTEGER PRIMARY KEY,web_user_id INTEGER UNIQUE,chat_id INTEGER UNIQUE,username TEXT,generation TEXT,subscribed INTEGER,linked_at INTEGER);
+CREATE TABLE fc_tg_batches(announcement_id INTEGER PRIMARY KEY REFERENCES fc_announcements(id),revision INTEGER,actor_id INTEGER,created_at INTEGER,message_text TEXT);
+CREATE TABLE fc_tg_deliveries(id INTEGER PRIMARY KEY AUTOINCREMENT,announcement_id INTEGER REFERENCES fc_tg_batches(announcement_id),member_id INTEGER,web_user_id INTEGER,chat_id INTEGER,generation TEXT,status TEXT DEFAULT 'pending',attempts INTEGER DEFAULT 0,available_at INTEGER,updated_at INTEGER,message_id INTEGER,error_code TEXT DEFAULT '',UNIQUE(announcement_id,member_id));
