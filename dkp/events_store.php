@@ -1,6 +1,9 @@
 <?php
 declare(strict_types=1);
 trait DKPEvents {
+    public function nextEvent():array|false {
+        return $this->a->query("SELECT id,title,category,points,scheduled_at FROM fc_events WHERE status='open' AND scheduled_at>=? ORDER BY scheduled_at ASC,id ASC LIMIT 1",[time()])->fetch();
+    }
     public function events(int $page=1):array {
         $offset=(max(1,min($page,100000))-1)*20;
         return $this->a->query("SELECT e.*,(SELECT COUNT(*) FROM fc_event_members WHERE event_id=e.id) AS attendees FROM fc_events e ORDER BY e.id DESC LIMIT 21 OFFSET $offset")->fetchAll();

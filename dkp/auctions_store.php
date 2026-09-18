@@ -1,6 +1,9 @@
 <?php
 declare(strict_types=1);
 trait DKPAuctions {
+    public function nextAuction():array|false {
+        return $this->a->query("SELECT id,item,minimum,highest_bid,highest_member,ends_at FROM fc_auctions WHERE status='open' AND ends_at>? ORDER BY ends_at ASC,id ASC LIMIT 1",[$this->now()])->fetch();
+    }
     public function now():int {return $this->clock ? (int)($this->clock)() : time();}
     public function reserved(string $id,string $exclude='0'):int {
         return (int)$this->a->query("SELECT COALESCE(SUM(highest_bid),0) FROM fc_auctions WHERE status='open' AND highest_member=? AND id<>?",[$id,$exclude])->fetchColumn();
