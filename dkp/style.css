@@ -32,3 +32,17 @@
 .next-event-link{background:#2b483b;border-color:#598f70;color:#dcfce7}.next-event-link:hover{background:#365b4a;border-color:#9de5ba}
 .next-event-empty{margin:0;color:#c5dfd0;font-size:14px}
 @media(max-width:400px){.next-event{padding:16px}.profile-button{padding:12px}.next-event-title{font-size:19px}}
+
+
+/* One upcoming card at a time; native radio keys work without JavaScript. */
+.profile-slider{position:relative;margin:0 0 24px;min-width:0}
+.profile-slide-choice{position:absolute;width:1px;height:1px;padding:0;margin:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
+.profile-slider-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;padding:4px;margin-bottom:10px;border:1px solid #554160;border-radius:10px;background:#17111f}
+.profile-slider-controls label{display:flex;align-items:center;justify-content:center;min-height:44px;margin:0;padding:8px 12px;border-radius:6px;color:#cbbbd6;font-size:14px;cursor:pointer}
+.profile-slider-controls label:hover{background:#352641;color:#f5ece7}
+#profile-slide-event:checked~.profile-slider-controls label[for="profile-slide-event"],#profile-slide-auction:checked~.profile-slider-controls label[for="profile-slide-auction"]{background:#c5acdd;color:#20162b;font-weight:700}
+#profile-slide-event:focus-visible~.profile-slider-controls label[for="profile-slide-event"],#profile-slide-auction:focus-visible~.profile-slider-controls label[for="profile-slide-auction"]{outline:2px solid #f5ece7;outline-offset:2px}
+.profile-slider .profile-slide{display:none;margin:0;min-width:0}
+#profile-slide-event:checked~.profile-slide-event,#profile-slide-auction:checked~.profile-slide-auction{display:block;animation:profile-slide-in .18s ease-out}
+@keyframes profile-slide-in{from{opacity:.5;transform:translateX(6px)}to{opacity:1;transform:translateX(0)}}
+@media(prefers-reduced-motion:reduce){#profile-slide-event:checked~.profile-slide-event,#profile-slide-auction:checked~.profile-slide-auction{animation:none}}

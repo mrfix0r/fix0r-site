@@ -130,7 +130,7 @@ $titles=['auctions'=>'Аукционы гильдии','events'=>'События
 function dkpForm(string $kind):void { formStart('dkp_'.$kind);echo '<input type="hidden" name="request_key" value="'.bin2hex(random_bytes(32)).'">'; }
 function formStart(string $action):void { echo '<form method="post"><input type="hidden" name="csrf" value="'.h($_SESSION['csrf']).'"><input type="hidden" name="action" value="'.h($action).'">'; }
 ?>
-<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title><?=h($titles[$page])?> · FC DKP</title><link rel="icon" href="/favicon.svg"><link rel="stylesheet" href="/dkp/style.css?v=4.5"></head><body>
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title><?=h($titles[$page])?> · FC DKP</title><link rel="icon" href="/favicon.svg"><link rel="stylesheet" href="/dkp/style.css?v=4.5.2"></head><body>
 <header><a class="brand" href="/">FC <span>TrustTheGame</span></a><a href="/">← На главную</a></header>
 <main<?= in_array($page,['manage','events','auctions'],true)?' class="management"':'' ?>><aside><div class="eyebrow">SLEEPINGFOREST / RF ONLINE</div><h1>Сила гильдии —<br>в каждом из нас.</h1><p>Место для твоего игрового профиля.<br>Вход через собственный аккаунт сайта.</p><div class="crest">FC</div><small>Собираемся вместе. Играем на доверии.</small></aside>
 <section class="card">
@@ -167,4 +167,5 @@ $buttons=['login'=>'Войти в кабинет','register'=>'Зарегист�
 <?php if($page==='register'): ?><small>Потребуется подтвердить email. Используй отдельный пароль для сайта.</small><?php endif; ?>
 <?php endif; endif; ?>
 </section></main><footer>FC · TrustTheGame <span>Таверна открыта</span></footer></body></html>
+
 
