@@ -13,11 +13,11 @@
 
 .telegram-notice-actions{display:flex;flex-direction:column;gap:12px;flex:0 0 310px;max-width:100%}
 .telegram-notice-actions .button{width:100%;min-width:0;font-size:14px;gap:12px}
-.youtube-stream-button{background:#b72432;color:#fff;font-weight:700;border-radius:8px;border:1px solid #f08b95}
-.youtube-stream-button:hover{background:#ce2c3c}
-.youtube-stream-button:focus-visible{outline:3px solid #f5ece7;outline-offset:5px}
+.twitch-stream-button{background:#c5acdd;color:#24182f;font-weight:700;border-radius:8px;border:1px solid #dcc8ed}
+.twitch-stream-button:hover{background:#dcc8ed}
+.twitch-stream-button:focus-visible{outline:3px solid #f5ece7;outline-offset:5px}
 @media(max-width:900px){.telegram-notice-actions{flex-basis:auto;width:100%;flex-direction:row;flex-wrap:wrap}.telegram-notice-actions .button{flex:1 1 260px}}
 
-.teamspeak-button{background:#c5acdd;color:#24182f;font-weight:700;border-radius:8px;border:1px solid #dcc8ed}
-.teamspeak-button:hover{background:#dcc8ed}
+.teamspeak-button{background:#245a91;color:#fff;font-weight:700;border-radius:8px;border:1px solid #77a9db}
+.teamspeak-button:hover{background:#2d6eae}
 .teamspeak-button:focus-visible{outline:3px solid #f5ece7;outline-offset:5px}
