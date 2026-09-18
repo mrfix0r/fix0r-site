@@ -130,7 +130,7 @@ $titles=['auctions'=>'Аукционы гильдии','events'=>'События
 function dkpForm(string $kind):void { formStart('dkp_'.$kind);echo '<input type="hidden" name="request_key" value="'.bin2hex(random_bytes(32)).'">'; }
 function formStart(string $action):void { echo '<form method="post"><input type="hidden" name="csrf" value="'.h($_SESSION['csrf']).'"><input type="hidden" name="action" value="'.h($action).'">'; }
 ?>
-<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title><?=h($titles[$page])?> · FC DKP</title><link rel="icon" href="/favicon.svg"><link rel="stylesheet" href="/dkp/style.css?v=4"></head><body>
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title><?=h($titles[$page])?> · FC DKP</title><link rel="icon" href="/favicon.svg"><link rel="stylesheet" href="/dkp/style.css?v=4.5"></head><body>
 <header><a class="brand" href="/">FC <span>TrustTheGame</span></a><a href="/">← На главную</a></header>
 <main<?= in_array($page,['manage','events','auctions'],true)?' class="management"':'' ?>><aside><div class="eyebrow">SLEEPINGFOREST / RF ONLINE</div><h1>Сила гильдии —<br>в каждом из нас.</h1><p>Место для твоего игрового профиля.<br>Вход через собственный аккаунт сайта.</p><div class="crest">FC</div><small>Собираемся вместе. Играем на доверии.</small></aside>
 <section class="card">
@@ -146,10 +146,7 @@ function formStart(string $action):void { echo '<form method="post"><input type=
 <?php elseif($page==='manage'): ?>
 <?php try { require __DIR__.'/manage_view.php'; } catch(Throwable $e) { error_log('DKP management: '.get_class($e).' code='.$e->getCode()); echo '<p class="error">Панель недоступна. Проверь установку обновления базы.</p>'; } ?>
 <?php elseif($page==='profile'): ?>
-<p class="identity"><?=h($user['nickname'])?></p><p><?=h($user['email'])?> · <?=h(['member'=>'Участник','officer'=>'Офицер','admin'=>'Администратор'][$user['role']]??'Участник')?></p>
-<?php if(in_array($user['role'],['admin','officer'],true)): ?><p><a href="?page=manage">Управление ДКП →</a></p><?php endif; ?>
-<p><a href="?page=events">События · отметить участие →</a></p>
-<p><a href="?page=auctions">Аукционы гильдии →</a></p>
+<?php require __DIR__.'/profile_overview.php'; ?>
 <?php if($auth->query("SELECT web_user_id FROM fc_registration_members WHERE web_user_id=? AND status='conflict'",[$user['id']])->fetchColumn() && !$auth->query('SELECT member_id FROM fc_web_links WHERE web_user_id=?',[$user['id']])->fetchColumn()): ?><p role="status">Email подтверждён, но такой игровой ник уже есть в составе. Новый профиль не создан. Попроси администратора проверить и привязать твой аккаунт.</p><?php endif; ?>
 <?php require __DIR__.'/migration_view.php'; ?>
 <details><summary>Изменить игровой ник</summary><?php formStart('nickname'); field('nickname','Новый ник','text','nickname'); ?><button>Сохранить ник</button></form></details>
@@ -170,3 +167,4 @@ $buttons=['login'=>'Войти в кабинет','register'=>'Зарегист�
 <?php if($page==='register'): ?><small>Потребуется подтвердить email. Используй отдельный пароль для сайта.</small><?php endif; ?>
 <?php endif; endif; ?>
 </section></main><footer>FC · TrustTheGame <span>Таверна открыта</span></footer></body></html>
+

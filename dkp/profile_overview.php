@@ -1,0 +1,26 @@
+<?php
+if(!isset($user,$dkp) || !$user){http_response_code(403);exit;}
+$roleName=['member'=>'Участник','officer'=>'Офицер','admin'=>'Администратор'][$user['role']]??'Участник';
+?>
+<div class="profile-identity">
+  <p class="identity"><?=h($user['nickname'])?></p>
+  <p class="profile-email"><?=h($user['email'])?></p>
+  <span class="profile-role"><?=h($roleName)?></span>
+</div>
+<nav class="profile-actions" aria-label="Разделы кабинета">
+  <a class="profile-button profile-button-primary" href="?page=events">События <span aria-hidden="true">→</span></a>
+  <a class="profile-button" href="?page=auctions">Аукционы гильдии <span aria-hidden="true">→</span></a>
+  <?php if(in_array($user['role'],['admin','officer'],true)): ?><a class="profile-button profile-button-manage" href="?page=manage">Управление ДКП <span aria-hidden="true">→</span></a><?php endif; ?>
+</nav>
+<section class="next-event" aria-labelledby="next-event-heading">
+  <h3 id="next-event-heading">Ближайшее событие</h3>
+  <?php try { $nextEvent=$dkp->nextEvent(); ?>
+  <?php if($nextEvent): $nextDate=(new DateTimeImmutable('@'.$nextEvent['scheduled_at']))->setTimezone(new DateTimeZone('Europe/Moscow')); ?>
+    <p class="next-event-type"><?=h(['cw'=>'ЧВ','pits'=>'Питы','gvg'=>'ГВГ','other'=>'Другое'][$nextEvent['category']]??'Событие')?> · Открыто</p>
+    <p class="next-event-title"><?=h($nextEvent['title'])?></p>
+    <time class="next-event-time" datetime="<?=h($nextDate->format(DateTimeInterface::ATOM))?>"><?=h($nextDate->format('d.m.Y'))?> <strong><?=h($nextDate->format('H:i'))?> МСК</strong></time>
+    <p class="next-event-reward">Награда: <?=h((string)$nextEvent['points'])?> ДКП</p>
+    <a class="profile-button next-event-link" href="?page=events&amp;event=<?=h((string)$nextEvent['id'])?>">Открыть событие <span aria-hidden="true">→</span></a>
+  <?php else: ?><p class="next-event-empty">Пока нет предстоящих открытых событий.</p><?php endif; ?>
+  <?php } catch(Throwable $e) { error_log('DKP next event: '.get_class($e)); ?><p class="next-event-empty">Не удалось загрузить ближайшее событие. Попробуй обновить страницу.</p><?php } ?>
+</section>

@@ -12,3 +12,23 @@
 .event-heading[class*="event-state-"]{border-left:4px solid var(--event-accent,#42324e);padding:12px 16px;border-radius:8px;background:var(--event-bg,#20162b)}
 .event-card[class*="event-state-"] h3 a{color:var(--event-text,#dcc5ef)}
 .event-card[class*="event-state-"] .status,.event-heading[class*="event-state-"] .status{background:var(--event-badge,#352641);color:var(--event-text,#e1cdee);border:1px solid var(--event-accent,#42324e)}
+
+
+/* Profile: separate account metadata, actions and the upcoming event. */
+.profile-identity{margin:0 0 24px}.profile-identity .identity{margin:0 0 6px;font-weight:700}
+.profile-email{margin:0 0 12px;color:#a9cfe8;font-size:14px;overflow-wrap:anywhere}
+.profile-role{display:inline-block;padding:4px 11px;border:1px solid #866644;border-radius:6px;background:#3b2c23;color:#f2cc99;font-size:12px}
+.profile-actions{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;margin:0 0 24px;font-size:14px}
+.profile-button{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:48px;padding:12px 16px;border:1px solid #72558a;border-radius:9px;background:#352641;color:#efe3fa;font-size:14px;font-weight:700;line-height:1.5;overflow-wrap:anywhere}
+.profile-button span{flex-shrink:0}.profile-button:hover{background:#443052;border-color:#b898d0;text-decoration:none}
+.profile-button-primary{background:#c5acdd;border-color:#c5acdd;color:#20162b}.profile-button-primary:hover{background:#dbc6ef;border-color:#dbc6ef}
+.profile-button-manage{background:#241c30;border-color:#65526f;color:#d6c5e0}
+.next-event{margin:0 0 24px;padding:20px;border:1px solid #467760;border-left:4px solid #7fd5a4;border-radius:12px;background:#1b2c29}
+.next-event h3{margin:0 0 16px;color:#c2dccc;font-size:12px;letter-spacing:1px;text-transform:uppercase}
+.next-event-type{margin:0 0 6px;color:#9de5ba;font-size:12px}
+.next-event-title{margin:0 0 14px;color:#effbf4;font-size:21px;font-weight:700;line-height:1.35;overflow-wrap:anywhere}
+.next-event-time{display:flex;flex-wrap:wrap;gap:4px 14px;color:#c5dfd0;font-size:14px}.next-event-time strong{color:#effbf4}
+.next-event-reward{margin:8px 0 16px;color:#c5dfd0;font-size:13px}
+.next-event-link{background:#2b483b;border-color:#598f70;color:#dcfce7}.next-event-link:hover{background:#365b4a;border-color:#9de5ba}
+.next-event-empty{margin:0;color:#c5dfd0;font-size:14px}
+@media(max-width:400px){.next-event{padding:16px}.profile-button{padding:12px}.next-event-title{font-size:19px}}
