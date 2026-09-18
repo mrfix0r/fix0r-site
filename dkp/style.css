@@ -49,7 +49,7 @@
 
 
 /* Compact guild announcements; content is plain text, never HTML. */
-.announcement-nav{font-size:14px;margin:0 0 16px}
+
 .announcement-banner{margin:0 0 18px;padding:14px 16px;border:1px solid #866644;border-radius:10px;background:#352a25}
 .announcement-banner summary{color:#f2cc99;overflow-wrap:anywhere}.announcement-banner summary strong{display:block;color:#fff0da;font-size:15px;line-height:1.4;margin:4px 0}
 .announcement-kicker{font-size:11px;text-transform:uppercase;letter-spacing:1px}
@@ -59,3 +59,8 @@
 .announcement-list-item{padding:16px 0;border-bottom:1px solid #42324e}.announcement-list-item h3{margin:6px 0;font-size:20px}
 textarea{display:block;width:100%;resize:vertical;min-height:150px;background:#17111f;color:#fff;border:1px solid #554160;border-radius:8px;padding:12px;font:inherit;margin-top:7px}
 textarea:focus-visible{outline:2px solid #c5acdd;outline-offset:2px}
+
+
+/* Important guild notices use the same button geometry as other sections. */
+.profile-button-announcements{background:#e8bf83;border-color:#e8bf83;color:#281e16}
+.profile-button-announcements:hover{background:#f4d5a5;border-color:#f4d5a5;color:#281e16}

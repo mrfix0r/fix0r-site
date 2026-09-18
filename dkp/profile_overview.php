@@ -7,8 +7,8 @@ $roleName=['member'=>'Участник','officer'=>'Офицер','admin'=>'Ад
   <p class="profile-email"><?=h($user['email'])?></p>
   <span class="profile-role"><?=h($roleName)?></span>
 </div>
-<p class="announcement-nav"><a href="?page=announcements">Объявления гильдии →</a></p>
 <nav class="profile-actions" aria-label="Разделы кабинета">
+  <a class="profile-button profile-button-announcements" href="?page=announcements">Объявления гильдии <span aria-hidden="true">→</span></a>
   <a class="profile-button profile-button-primary" href="?page=events">События <span aria-hidden="true">→</span></a>
   <a class="profile-button" href="?page=auctions">Аукционы гильдии <span aria-hidden="true">→</span></a>
   <?php if(in_array($user['role'],['admin','officer'],true)): ?><a class="profile-button profile-button-manage" href="?page=manage">Управление ДКП <span aria-hidden="true">→</span></a><?php endif; ?>
@@ -51,4 +51,5 @@ $roleName=['member'=>'Участник','officer'=>'Офицер','admin'=>'Ад
 
 
 </div>
+
 
