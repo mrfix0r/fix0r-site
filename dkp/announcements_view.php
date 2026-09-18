@@ -44,6 +44,7 @@ function annEditor(?array $row=null):void {
 <?php else: ?><p>Для подтверждения прочтения нужен активный привязанный профиль ДКП.</p><?php endif; ?>
 <?php endif; ?>
 </article>
+<?php if($admin){require __DIR__.'/telegram_announcement.php';} ?>
 <?php if($admin && (int)$item['requires_ack']): $readers=$announcements->readers($user,$item);$readCount=count(array_filter($readers,fn($r)=>$r['read_at']!==null)); ?>
 <details><summary>Прочитали <?=$readCount?> из <?=count($readers)?> · текущий состав</summary>
 <p>Подтверждения текущей версии. Новые участники появляются в списке, удалённые из состава — исключаются.</p>
@@ -68,3 +69,4 @@ function annEditor(?array $row=null):void {
 <?php endforeach; ?>
 <nav aria-label="Страницы объявлений"><?php if($pageNumber>1): ?><a href="?page=announcements&amp;p=<?=$pageNumber-1?>">← Новее</a><?php endif; ?><?php if($hasNext): ?><a href="?page=announcements&amp;p=<?=$pageNumber+1?>">Старее →</a><?php endif; ?></nav>
 <?php endif; ?>
+

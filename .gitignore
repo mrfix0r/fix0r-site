@@ -50,3 +50,7 @@
 Thumbs.db
 .vscode/
 .idea/
+
+
+# Telegram credentials belong only on hosting
+/dkp/telegram_config.php
