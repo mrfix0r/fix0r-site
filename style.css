@@ -11,3 +11,11 @@
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*:before,*:after{animation:none!important;transition:none!important}}
 
 .schedule-foot>span a:hover{color:var(--copper);text-decoration:underline;text-underline-offset:3px}
+
+/* Community voice links wrap independently on narrow screens. */
+.community-actions{display:flex;flex-wrap:wrap;align-items:stretch;gap:12px;width:100%;margin-top:auto}
+.interest-panel .community-actions .button{margin-top:0;min-width:0}
+.discord-button{background:#5865f2;color:#fff;font-weight:600;border:1px solid #8590ff}
+.discord-button:hover{background:#4752c4;transform:translateY(-2px)}
+.discord-button:focus-visible{outline:3px solid #f5ece7;outline-offset:5px}
+@media(max-width:760px){.community-actions .button{width:100%}}
