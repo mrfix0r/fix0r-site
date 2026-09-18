@@ -126,7 +126,7 @@ if ($ready && $_SERVER['REQUEST_METHOD']==='POST') {
 }
 if ($ready && in_array($page,['profile','auctions','events'],true) && !$user) go('login');
 if ($ready && $page==='manage' && (!$user || !in_array($user['role'],['admin','officer'],true))) go('profile');
-$titles=['auctions'=>'Аукционы гильдии','events'=>'События гильдии','manage'=>'Управление ДКП','login'=>'С возвращением','register'=>'Присоединяйся к гильдии','forgot'=>'Забыл пароль?','resend'=>'Подтвердим почту','verify'=>'Подтверждение email','reset'=>'Новый пароль','profile'=>'Твой кабинет'];
+$titles=['auctions'=>'Аукционы гильдии','events'=>'События гильдии','manage'=>'Управление ДКП','login'=>'С возвращением','register'=>'Присоединяйся к гильдии','forgot'=>'Забыл пароль?','resend'=>'Подтвердим почту','verify'=>'Подтверждение email','reset'=>'Новый пароль','profile'=>'Личный кабинет'];
 function dkpForm(string $kind):void { formStart('dkp_'.$kind);echo '<input type="hidden" name="request_key" value="'.bin2hex(random_bytes(32)).'">'; }
 function formStart(string $action):void { echo '<form method="post"><input type="hidden" name="csrf" value="'.h($_SESSION['csrf']).'"><input type="hidden" name="action" value="'.h($action).'">'; }
 ?>
@@ -135,7 +135,7 @@ function formStart(string $action):void { echo '<form method="post"><input type=
 <main<?= in_array($page,['manage','events','auctions'],true)?' class="management"':'' ?>><aside><div class="eyebrow">SLEEPINGFOREST / RF ONLINE</div><h1>Сила гильдии —<br>в каждом из нас.</h1><p>Место для твоего игрового профиля.<br>Вход через собственный аккаунт сайта.</p><div class="crest">FC</div><small>Собираемся вместе. Играем на доверии.</small></aside>
 <section class="card">
 <?php if (!$ready): ?><div class="eyebrow">FC DKP</div><h2>Кабинет готовится к открытию</h2><p>Администратору нужно завершить настройку сервера. Попробуй зайти позже.</p><a href="/">Вернуться на главную →</a>
-<?php else: ?><div class="eyebrow">ЛИЧНЫЙ КАБИНЕТ</div><h2><?=h($titles[$page])?></h2>
+<?php else: ?><?php if($page==='profile'): ?><h2 class="eyebrow">ЛИЧНЫЙ КАБИНЕТ</h2><?php else: ?><div class="eyebrow">ЛИЧНЫЙ КАБИНЕТ</div><h2><?=h($titles[$page])?></h2><?php endif; ?>
 <?php if(isset($_SESSION['flash'])): ?><p class="notice" role="status"><?=h($_SESSION['flash'])?></p><?php unset($_SESSION['flash']); endif; ?>
 <?php if($error): ?><p class="error" role="alert"><?=h($error)?></p><?php endif; ?>
 <?php if($auctionWarning??''): ?><p class="error"><?=h($auctionWarning)?></p><?php endif; ?>

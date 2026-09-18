@@ -24,3 +24,18 @@ $roleName=['member'=>'Участник','officer'=>'Офицер','admin'=>'Ад
   <?php else: ?><p class="next-event-empty">Пока нет предстоящих открытых событий.</p><?php endif; ?>
   <?php } catch(Throwable $e) { error_log('DKP next event: '.get_class($e)); ?><p class="next-event-empty">Не удалось загрузить ближайшее событие. Попробуй обновить страницу.</p><?php } ?>
 </section>
+
+<section class="next-event" aria-labelledby="next-auction-heading">
+  <h3 id="next-auction-heading">Ближайший аукцион</h3>
+  <?php try { $nextAuction=$dkp->nextAuction(); ?>
+  <?php if($nextAuction): $auctionEnd=(new DateTimeImmutable('@'.$nextAuction['ends_at']))->setTimezone(new DateTimeZone('Europe/Moscow')); ?>
+    <p class="next-event-type">Торги открыты · Завершится первым</p>
+    <p class="next-event-title"><?=h($nextAuction['item'])?></p>
+    <p class="next-event-reward"><?php if($nextAuction['highest_member']!==null): ?>Текущая ставка: <strong><?=h((string)$nextAuction['highest_bid'])?> ДКП</strong><?php else: ?>Ставок пока нет · Начальная цена: <strong><?=h((string)$nextAuction['minimum'])?> ДКП</strong><?php endif; ?></p>
+    <p class="next-event-type">Окончание торгов</p>
+    <time class="next-event-time" datetime="<?=h($auctionEnd->format(DateTimeInterface::ATOM))?>"><?=h($auctionEnd->format('d.m.Y'))?> <strong><?=h($auctionEnd->format('H:i'))?> МСК</strong></time>
+    <p class="next-event-reward">Время окончания может продлеваться при поздних ставках.</p>
+    <a class="profile-button next-event-link" href="?page=auctions&amp;auction=<?=h((string)$nextAuction['id'])?>">Открыть аукцион <span aria-hidden="true">→</span></a>
+  <?php else: ?><p class="next-event-empty">Сейчас нет открытых аукционов.</p><?php endif; ?>
+  <?php } catch(Throwable $e) { error_log('DKP next auction: '.get_class($e)); ?><p class="next-event-empty">Не удалось загрузить ближайший аукцион. Попробуй обновить страницу.</p><?php } ?>
+</section>
