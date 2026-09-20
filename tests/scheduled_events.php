@@ -6,8 +6,10 @@ require __DIR__.'/../dkp/scheduled_events.php';
 function fixture(string $dsn='sqlite::memory:'): Auth {
     $db=new PDO($dsn);$db->exec('PRAGMA foreign_keys=ON; PRAGMA busy_timeout=10000;');
     $auth=new Auth($db,'https://example.test',static fn()=>false);
-    $db->exec("CREATE TABLE dkp_users(id INTEGER PRIMARY KEY,role TEXT,verified_at INTEGER);
-        INSERT INTO dkp_users VALUES(1,'admin',1);
+    $db->exec("CREATE TABLE dkp_users(id INTEGER PRIMARY KEY,role TEXT,verified_at INTEGER,session_version INTEGER DEFAULT 1);
+        INSERT INTO dkp_users VALUES(1,'admin',1,1);
+        CREATE TABLE fc_event_schedule(id INTEGER PRIMARY KEY,enabled INTEGER,revision INTEGER,resume_after INTEGER);
+        INSERT INTO fc_event_schedule VALUES(1,1,1,0);
         CREATE TABLE fc_write_lock(id INTEGER PRIMARY KEY,revision INTEGER);
         INSERT INTO fc_write_lock VALUES(1,0);
         CREATE TABLE fc_events(id INTEGER PRIMARY KEY AUTOINCREMENT,title TEXT,category TEXT,points INTEGER,scheduled_at INTEGER,status TEXT DEFAULT 'open',revision INTEGER DEFAULT 1,creator_id INTEGER REFERENCES dkp_users(id),created_at INTEGER,closed_at INTEGER,closed_by INTEGER);
@@ -21,6 +23,11 @@ $n=0;
 function check(bool $ok,string $label):void {global $n;if(!$ok)throw new RuntimeException('Failed: '.$label);$n++;}
 function countEvents(Auth $a):int {return (int)$a->query('SELECT COUNT(*) FROM fc_events')->fetchColumn();}
 if (($argv[1]??'')==='--prepare') {fixture('sqlite:'.$argv[2]);exit;}
+if (($argv[1]??'')==='--disable') {
+    $db=new PDO('sqlite:'.$argv[2]);$db->exec('PRAGMA busy_timeout=10000');
+    $a=new Auth($db,'https://example.test',static fn()=>false);
+    (new ScheduledEvents($a,settings()))->setEnabled(1,1,'0','1',at('2026-09-16 07:30:00'));exit;
+}
 if (($argv[1]??'')==='--worker') {
     $db=new PDO('sqlite:'.$argv[2]);$db->exec('PRAGMA busy_timeout=10000');
     $a=new Auth($db,'https://example.test',static fn()=>false);
@@ -63,4 +70,32 @@ check(countEvents($b)===0,'unprivileged creator rejected');
 check((new ScheduledEvents($b,settings(['enabled'=>false])))->run(at('2026-09-16 07:30:00'))===0,'disabled scheduler');
 try {new ScheduledEvents($b,settings(['points'=>0]));throw new LogicException('Expected invalid reward');}catch(RuntimeException $e){if($e instanceof LogicException)throw $e;}
 check(true,'invalid settings rejected');
+$b=fixture();$s=new ScheduledEvents($b,settings());
+$s->setEnabled(1,1,'0','1',at('2026-09-16 07:29:00'));
+check(!$s->state()['enabled'],'switch persists disabled state');
+check($s->run(at('2026-09-16 07:30:00'))===0 && countEvents($b)===0,'disabled slot creates nothing');
+$s->setEnabled(1,1,'1','2',at('2026-09-16 07:31:00'));
+check($s->run(at('2026-09-16 07:32:00'))===0,'resume does not catch up missed slot');
+check($s->run(at('2026-09-16 15:30:00'))===1,'next slot resumes normally');
+$s->setEnabled(1,1,'0','3',at('2026-09-16 16:00:00'));
+check(countEvents($b)===1,'disable preserves existing events');
+try {$s->setEnabled(1,1,'1','3');throw new LogicException('Expected stale form');}catch(AuthError){}
+check(!$s->state()['enabled'],'stale form cannot change settings');
+try {$s->setEnabled(1,2,'1','4');throw new LogicException('Expected stale session');}catch(AuthError){}
+check(!$s->state()['enabled'],'stale session rejected');
+$b->query("UPDATE dkp_users SET role='member'");
+try {$s->setEnabled(1,1,'1','4');throw new LogicException('Expected role rejection');}catch(AuthError){}
+check(!$s->state()['enabled'],'member cannot change schedule');
+$b->query("UPDATE dkp_users SET role='officer'");
+$s->setEnabled(1,1,'1','4',at('2026-09-16 16:01:00'));
+check($s->state()['enabled'],'officer can resume schedule');
+check((int)$b->query("SELECT COUNT(*) FROM fc_operations WHERE kind='cw_schedule'")->fetchColumn()===4,'every transition audited');
+$b->db->exec("CREATE TRIGGER fail_switch BEFORE INSERT ON fc_operations BEGIN SELECT RAISE(ABORT,'audit failed'); END;");
+try {$s->setEnabled(1,1,'0','5');throw new LogicException('Expected rollback');}catch(PDOException){}
+check($s->state()['enabled'] && $s->state()['revision']===5,'audit failure rolls switch back');
+$b->db->exec('DROP TRIGGER fail_switch');
+$s->setEnabled(1,1,'0','5');
+try {(new ScheduledEvents($b,settings(['enabled'=>false])))->setEnabled(1,1,'1','6');throw new LogicException('Expected configuration rejection');}catch(AuthError){}
+check(!$s->state()['enabled'],'configuration disable cannot be bypassed');
+check((int)$b->query('SELECT COUNT(*) FROM fc_points')->fetchColumn()===0,'toggle never changes balances');
 echo "$n checks passed\n";
