@@ -42,6 +42,21 @@ function eventFieldsView(array $ev,array $types):void { ?>
  $ep=filter_var($_GET['ep']??1,FILTER_VALIDATE_INT);$ep=max(1,min((int)$ep,100000));$list=$dkp->events($ep);$more=count($list)>20;$list=array_slice($list,0,20); ?>
 <p>Открой событие и нажми «Я участвую». Пока событие открыто, можно снять свою отметку. Награда выдаётся офицером после проверки списка.</p>
 <?php if($staff): ?>
+<?php
+require_once __DIR__.'/scheduled_events.php';
+try {
+ $schedule=new ScheduledEvents($auth,require __DIR__.'/cw_schedule.php');$scheduleState=$schedule->state();
+ $autoOn=$scheduleState['configured'] && $scheduleState['enabled']; ?>
+<div class="notice"><h3>Автосоздание ЧВ</h3>
+<p><strong><?=$autoOn?'Включено':'Отключено'?></strong> · ежедневно в 07:30, 15:30 и 20:30 МСК.</p>
+<p>Отключение сохраняет уже созданные события. После включения пропущенные ЧВ не создаются.</p>
+<?php if($scheduleState['configured']): formStart('cw_schedule'); ?>
+<input type="hidden" name="enabled" value="<?=$autoOn?'0':'1'?>">
+<input type="hidden" name="revision" value="<?=h((string)$scheduleState['revision'])?>">
+<button<?=$autoOn?' class="secondary"':''?>><?=$autoOn?'Отключить автосоздание':'Включить автосоздание'?></button></form>
+<?php else: ?><p>Отключено в настройках сервера. Для включения обратись к администратору.</p><?php endif; ?>
+</div>
+<?php } catch(Throwable $e) { error_log('CW settings: '.get_class($e)); ?><p class="error">Настройка автосоздания недоступна. Администратору нужно проверить установку обновления базы.</p><?php } ?>
 <details><summary>Создать событие</summary><?php dkpForm('evt_create');eventFieldsView([],$types); ?><button>Создать событие</button></form></details><?php endif; ?>
 <?php if(!$list): ?><p>На этой странице пока нет событий.</p><?php endif; ?>
 <?php foreach($list as $ev): ?><article class="event-card event-state-<?=h(array_key_exists($ev['status'],$states)?$ev['status']:'unknown')?>"><div class="eyebrow"><?=h($types[$ev['category']]??'Событие')?> · #<?=h((string)$ev['id'])?></div><h3><a href="?page=events&amp;event=<?=h((string)$ev['id'])?>"><?=h($ev['title'])?> →</a></h3><p><?=h((new DateTimeImmutable('@'.$ev['scheduled_at']))->setTimezone(new DateTimeZone('Europe/Moscow'))->format('d.m.Y H:i'))?> МСК · <?=h((string)$ev['points'])?> ДКП · участников <?=h((string)$ev['attendees'])?></p><span class="status"><?=h($states[$ev['status']]??$ev['status'])?></span></article><?php endforeach; ?>

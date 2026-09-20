@@ -13,6 +13,39 @@ final class ScheduledEvents {
         }
     }
 
+    public function state(): array {
+        $row=$this->auth->query('SELECT enabled,revision,resume_after FROM fc_event_schedule WHERE id=1')->fetch();
+        if (!$row) throw new RuntimeException('Missing event schedule settings');
+        return ['enabled'=>(bool)$row['enabled'], 'revision'=>(int)$row['revision'],
+            'resume_after'=>(int)$row['resume_after'], 'configured'=>$this->settings['enabled']];
+    }
+
+    public function setEnabled(int $actor,int $version,string $enabled,string $revision,?int $now=null): void {
+        if (!in_array($enabled,['0','1'],true) || !preg_match('/^[1-9][0-9]{0,9}$/D',$revision)) throw new AuthError('Обнови страницу и повтори действие.');
+        $db=$this->auth->db;
+        if ($db->inTransaction()) throw new RuntimeException('Schedule settings require their own transaction');
+        $db->beginTransaction();
+        try {
+            if ($this->auth->query('UPDATE fc_write_lock SET revision=revision+1 WHERE id=1')->rowCount()!==1) throw new RuntimeException('Missing write lock');
+            $u=$this->auth->query('SELECT role,verified_at,session_version FROM dkp_users WHERE id=?',[$actor])->fetch();
+            if (!$u || !$u['verified_at'] || (int)$u['session_version']!==$version || !in_array($u['role'],['admin','officer'],true)) throw new AuthError('Это действие доступно только офицеру или администратору.');
+            $state=$this->state();
+            if ($state['revision']!==(int)$revision) throw new AuthError('Настройка уже изменена. Обнови страницу.');
+            if ($enabled==='1' && !$state['configured']) throw new AuthError('Автосоздание отключено в cw_schedule.php. Обратись к администратору.');
+            if ($state['enabled']===($enabled==='1')) { $db->commit();return; }
+            $now ??= time();
+            // On resume, skip every slot whose scheduled time has already passed.
+            $after=$enabled==='1'?$now:$state['resume_after'];
+            $this->auth->query('UPDATE fc_event_schedule SET enabled=?,revision=revision+1,resume_after=? WHERE id=1',[(int)$enabled,$after]);
+            $details=json_encode(['enabled'=>$enabled==='1','resume_after'=>$after,'revision'=>$state['revision']+1],JSON_THROW_ON_ERROR);
+            $this->auth->query('INSERT INTO fc_operations(request_key,actor_id,kind,payload_hash,details,created_at) VALUES(?,?,?,?,?,?)',[bin2hex(random_bytes(32)),$actor,'cw_schedule',hash('sha256',$details),$details,$now]);
+            $db->commit();
+        } catch (Throwable $e) {
+            if ($db->inTransaction()) $db->rollBack();
+            throw $e;
+        }
+    }
+
     private function checkCreator(): void {
         $u=$this->auth->query('SELECT role,verified_at FROM dkp_users WHERE id=?',[$this->settings['creator_id']])->fetch();
         if (!$u || $u['role']!=='admin' || !$u['verified_at']) throw new RuntimeException('CW creator must be a verified administrator');
@@ -20,6 +53,8 @@ final class ScheduledEvents {
 
     public function check(): void {
         if (!$this->settings['enabled']) return;
+        $state=$this->state();
+        if (!$state['enabled']) return;
         $this->checkCreator();
         $this->auth->query('SELECT id,title,category,points,scheduled_at,creator_id,created_at FROM fc_events LIMIT 1');
         $this->auth->query('SELECT request_key,actor_id,kind,payload_hash,details,created_at FROM fc_operations LIMIT 1');
@@ -43,6 +78,8 @@ final class ScheduledEvents {
             try {
                 // Same lock as manual events, attendance, rewards and auctions.
                 if ($this->auth->query('UPDATE fc_write_lock SET revision=revision+1 WHERE id=1')->rowCount()!==1) throw new RuntimeException('Missing write lock');
+                $state=$this->state();
+                if (!$state['enabled'] || $scheduled<=$state['resume_after']) { $db->commit();continue; }
                 if ($this->auth->query('SELECT request_key FROM fc_operations WHERE request_key=?',[$key])->fetch()) {
                     $db->commit();continue;
                 }

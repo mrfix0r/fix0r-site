@@ -75,6 +75,13 @@ if ($ready && $_SERVER['REQUEST_METHOD']==='POST') {
             $auth->rate('mail-ip:'.($_SERVER['REMOTE_ADDR']??''),10);
             $auth->rate('mail-email:'.Auth::email($email),3);
         }
+        if ($action==='cw_schedule') {
+            if (!$user) throw new AuthError('Войди в кабинет.');
+            require_once __DIR__.'/scheduled_events.php';
+            $schedule=new ScheduledEvents($auth,require __DIR__.'/cw_schedule.php');
+            $schedule->setEnabled((int)$user['id'],$_SESSION['version'],$_POST['enabled']??'',$_POST['revision']??'');
+            go('events',($_POST['enabled']??'')==='1'?'Автосоздание ЧВ включено. Пропущенные события создаваться не будут.':'Автосоздание ЧВ отключено. Уже созданные события сохранены.');
+        }
         if(in_array($action,['tg_link','tg_unlink','tg_notify'],true)) {
             if(!$user)throw new AuthError('Войди в кабинет.');
             if($action==='tg_link'){
@@ -195,8 +202,3 @@ $buttons=['login'=>'Войти в кабинет','register'=>'Зарегист�
 <?php if($page==='register'): ?><small>Потребуется подтвердить email. Используй отдельный пароль для сайта.</small><?php endif; ?>
 <?php endif; endif; ?>
 </section></main><footer>FC · TrustTheGame <span>Таверна открыта</span></footer></body></html>
-
-
-
-
-
