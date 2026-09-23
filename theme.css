@@ -90,15 +90,14 @@ html[data-theme="forest"] .site-home .brand-mark { background:#364838; color:#f2
 [data-theme="forest"] .dkp-app :where(p,small,.brand span,footer,.announcement-meta) { color:#58604e; }
 [data-theme="forest"] .dkp-app :is(.brand,.identity,label) { color:#283c2e; }
 [data-theme="forest"] .dkp-app :is(.eyebrow,th,footer span) { color:#805436; }
-[data-theme="forest"] .dkp-app .crest { color:#f2e2cbe6; text-shadow:0 2px 14px #283c2e80; }
-/* Keep the copy readable, then reveal the illustration instead of tinting it throughout. */
-[data-theme="forest"] .dkp-app aside { background-image:linear-gradient(180deg,#f2e2cb 0%,#f2e2cbf2 44%,#f2e2cb00 76%),url('/forest-green.svg'); }
+/* Keep the original background placement, with the illustration as the only layer. */
+[data-theme="forest"] .dkp-app aside { background:url('/forest-green.svg') center bottom/cover no-repeat; }
+[data-theme="forest"] .dkp-app .crest { color:#f2e2cbe6; text-shadow:0 2px 4px #283c2e; }
 @media(min-width:801px) {
-  [data-theme="forest"] .dkp-app aside small { display:inline-block; padding:4px 8px; border-radius:6px; background:#f2e2cbeb; color:#364838; }
-}
-@media(min-width:801px) and (max-width:960px) {
-  /* The introduction wraps to more lines in the narrower two-column layout. */
-  [data-theme="forest"] .dkp-app aside { background-image:linear-gradient(180deg,#f2e2cb 0%,#f2e2cbf2 64%,#f2e2cb00 88%),url('/forest-green.svg'); }
+  [data-theme="forest"] .dkp-app aside :is(h1,p,small) {
+    color:#fff5e5;
+    text-shadow:0 1px 2px #1d3021,1px 0 #1d3021,-1px 0 #1d3021,0 -1px #1d3021;
+  }
 }
 [data-theme="forest"] .dkp-app .card { background:#f9efdf; border-color:#c2bba3; box-shadow:0 16px 60px #36483810; }
 [data-theme="forest"] .dkp-app :is(input,select,textarea) { background:#fff8ed; color:#283c2e; border-color:#8d927d; color-scheme:light; }
