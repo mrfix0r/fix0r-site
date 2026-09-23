@@ -14,8 +14,8 @@
       const forest = theme === 'forest';
       button.setAttribute('aria-pressed', String(forest));
       button.setAttribute('aria-label', 'Тема «Лес и крем»');
-      button.title = forest ? 'Включить тему «Таверна»' : 'Включить тему «Лес и крем»';
-      button.querySelector('[data-theme-label]').textContent = forest ? 'Лес и крем' : 'Таверна';
+      button.title = forest ? 'Включить тему «Сумеречный лес»' : 'Включить тему «Лес и крем»';
+      button.querySelector('[data-theme-label]').textContent = forest ? 'Лес и крем' : 'Сумеречный лес';
       button.hidden = false;
     });
   }
