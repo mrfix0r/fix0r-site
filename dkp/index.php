@@ -2,7 +2,7 @@
 declare(strict_types=1);
 ini_set('display_errors','0');
 header('Content-Type: text/html; charset=utf-8');
-header("Content-Security-Policy: default-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; script-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'");
+header("Content-Security-Policy: default-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; script-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'");
 header('Referrer-Policy: no-referrer'); header('X-Content-Type-Options: nosniff'); header('Cache-Control: no-store');
 // Cheap rejection before database, session creation and password hashing.
 $method=$_SERVER['REQUEST_METHOD']??'GET';
@@ -162,8 +162,8 @@ $titles=['announcements'=>'Объявления','auctions'=>'Аукционы �
 function dkpForm(string $kind):void { formStart('dkp_'.$kind);echo '<input type="hidden" name="request_key" value="'.bin2hex(random_bytes(32)).'">'; }
 function formStart(string $action):void { echo '<form method="post"><input type="hidden" name="csrf" value="'.h($_SESSION['csrf']).'"><input type="hidden" name="action" value="'.h($action).'">'; }
 ?>
-<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title><?=h($titles[$page])?> · FC DKP</title><link rel="icon" href="/favicon.svg"><link rel="stylesheet" href="/dkp/style.css?v=4.6.1"></head><body>
-<header><a class="brand" href="/">FC <span>TrustTheGame</span></a><a href="/">← На главную</a></header>
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title><?=h($titles[$page])?> · FC DKP</title><link rel="icon" href="/favicon.svg"><script src="/theme.js?v=1"></script><link rel="stylesheet" href="/dkp/style.css?v=4.6.1"><link rel="stylesheet" href="/theme.css?v=1"></head><body class="dkp-app">
+<header><a class="brand" href="/">FC <span>TrustTheGame</span></a><div class="header-tools"><button class="theme-toggle" type="button" data-theme-toggle aria-label="Тема «Лес и крем»" aria-pressed="false" hidden><span class="theme-swatch" aria-hidden="true"></span><span data-theme-label>Таверна</span></button><a href="/">← На главную</a></div></header>
 <main<?= in_array($page,['manage','events','auctions','announcements'],true)?' class="management"':'' ?>><aside><div class="eyebrow">SLEEPINGFOREST / RF ONLINE</div><h1>Сила гильдии —<br>в каждом из нас.</h1><p>Место для твоего игрового профиля.<br>Вход через собственный аккаунт сайта.</p><div class="crest">FC</div><small>Собираемся вместе. Играем на доверии.</small></aside>
 <section class="card">
 <?php if (!$ready): ?><div class="eyebrow">FC DKP</div><h2>Кабинет готовится к открытию</h2><p>Администратору нужно завершить настройку сервера. Попробуй зайти позже.</p><a href="/">Вернуться на главную →</a>
