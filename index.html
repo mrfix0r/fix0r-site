@@ -12,6 +12,8 @@
   <link rel="preload" href="/fonts/URWGothic-Book.otf" as="font" type="font/otf" crossorigin>
   <link rel="stylesheet" href="/typography.css">
   <link rel="stylesheet" href="/telegram-notice.css?v=5">
+  <link rel="stylesheet" href="/twitch-player.css?v=1">
+  <link rel="stylesheet" href="/stream-navigation.css?v=1">
   <script src="/app.js" defer></script>
 </head>
 <body>
@@ -22,6 +24,7 @@
       <span class="brand-name">TrustTheGame<span>МЕСТО ДЛЯ СВОИХ</span></span>
     </a>
     <nav aria-label="Основная навигация">
+      <a class="live-nav-link" href="#twitch-stream"><span class="live-nav-dot" aria-hidden="true"></span>Прямая трансляция</a>
       <a href="#schedule">Эфиры</a>
       <a href="#code">Наш кодекс</a>
       <a href="#explore">Найти своё место <span aria-hidden="true">↗</span></a>
@@ -34,7 +37,7 @@
         <div class="telegram-notice-copy">
           <p class="telegram-kicker">НЕ ТЕРЯЕМСЯ</p>
           <h2 id="telegram-title">Все анонсы — в Telegram</h2>
-          <p>Мой канал на Twitch заблокирован. Подпишись на Telegram: там все анонсы стримов, актуальные ссылки на эфиры и новости. Остаёмся на связи!</p>
+          <p>Снова в эфире на Twitch! Смотри стрим прямо здесь, а на Telegram подпишись ради анонсов, новостей и общения между эфирами.</p>
         </div>
         <div class="telegram-notice-actions">
           <a class="button telegram-button" href="https://t.me/fix0rStream" target="_blank" rel="noopener noreferrer">Подписаться на Telegram <span aria-hidden="true">↗</span></a>
@@ -57,6 +60,29 @@
         <button class="lantern-switch" type="button" aria-pressed="true" aria-label="Выключить свет фонаря"><span class="lantern-dot"></span><span id="lantern-label">Фонарь горит</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4h6M10 2h4M8 8h8l2 11H6L8 8Zm2-4v4m4-4v4M8 21h8"/></svg></button>
       </div>
       <div class="hero-bottom"><span>РАЗНЫЕ ИГРЫ. ОДНИ ЦЕННОСТИ.</span><div><span>Честь</span><span class="diamond" aria-hidden="true">◆</span><span>Дружба</span><span class="diamond" aria-hidden="true">◆</span><span>TrustTheGame</span></div><a href="#schedule" aria-label="К расписанию">Листай, путник <span aria-hidden="true">↓</span></a></div>
+    </section>
+
+    <section id="twitch-stream" class="twitch-stream wrap" aria-labelledby="twitch-stream-title">
+      <div class="twitch-stream-heading">
+        <div>
+          <p class="twitch-stream-kicker">TWITCH / FIX0R</p>
+          <h2 id="twitch-stream-title">Стрим в нашей таверне</h2>
+          <p class="twitch-stream-intro">Устраивайся поудобнее. Эфир можно смотреть прямо здесь.</p>
+        </div>
+        <a class="button twitch-stream-link" href="https://www.twitch.tv/fix0r" target="_blank" rel="noopener noreferrer">Открыть на Twitch <span aria-hidden="true">↗</span></a>
+      </div>
+      <div class="twitch-player-window">
+        <iframe class="twitch-embed-frame"
+          src="https://player.twitch.tv/?channel=fix0r&amp;parent=fix0r.ru&amp;parent=www.fix0r.ru&amp;parent=fix0r.online&amp;parent=www.fix0r.online&amp;parent=fc-trustthegame-tavern.mrfix0r.chatgpt.site&amp;autoplay=false"
+          title="Прямой эфир Fix0r на Twitch" width="960" height="540"
+          loading="lazy" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen
+          referrerpolicy="strict-origin-when-cross-origin"></iframe>
+        <div class="twitch-mobile-note">
+          <p>Поверни телефон горизонтально, чтобы смотреть здесь, или открой стрим на Twitch.</p>
+          <a class="button twitch-stream-link" href="https://www.twitch.tv/fix0r" target="_blank" rel="noopener noreferrer">Смотреть на Twitch <span aria-hidden="true">↗</span></a>
+        </div>
+      </div>
+      <p class="twitch-stream-note">Если эфира сейчас нет — загляни в <a href="https://t.me/fix0rStream" target="_blank" rel="noopener noreferrer">Telegram</a> за анонсом следующей встречи.</p>
     </section>
 
     <section class="gathering wrap" aria-label="Встречи и правила сообщества">
@@ -99,7 +125,7 @@
               <span class="panel-tag">ТВОЙ МАРШРУТ <span aria-hidden="true">/</span> TELEGRAM</span>
               <div class="panel-emblem" aria-hidden="true"><svg viewBox="0 0 64 64"><rect x="10" y="14" width="44" height="32" rx="6"/><path d="m28 23 13 7-13 8V23ZM24 54h16m-8-8v8"/></svg></div>
               <h3>Место в первом ряду.</h3>
-              <p>Канал Fix0r на Twitch заблокирован. Все анонсы стримов и актуальные ссылки на эфиры теперь в Telegram. Подписывайся, чтобы не пропустить следующую встречу.</p>
+              <p>Смотри стрим Fix0r прямо на этой странице или на Twitch. Все анонсы и новости — в Telegram. Подписывайся, чтобы не пропустить следующую встречу.</p>
               <a class="button primary" href="https://t.me/fix0rStream" target="_blank" rel="noopener noreferrer">Подписаться на Telegram <span aria-hidden="true">↗</span></a>
               <span class="panel-footnote">Встречаемся по понедельникам, средам и пятницам.</span>
             </div>
@@ -134,7 +160,7 @@
         </div>
         <div class="places" aria-label="Площадки FC">
           <div class="places-label"><span class="tiny-star" aria-hidden="true">✦</span> ОСТАЁМСЯ НА СВЯЗИ</div>
-          <a class="place" href="https://www.twitch.tv/fix0r" target="_blank" rel="noopener noreferrer"><span><strong>Twitch</strong><small>Канал заблокирован</small></span><span aria-hidden="true">↗</span></a>
+          <a class="place" href="https://www.twitch.tv/fix0r" target="_blank" rel="noopener noreferrer"><span><strong>Twitch</strong><small>Стримы Fix0r</small></span><span aria-hidden="true">↗</span></a>
           <a class="place" href="https://t.me/fix0rStream" target="_blank" rel="noopener noreferrer"><span><strong>Telegram</strong><small>Все анонсы и ссылки на эфиры</small></span><span aria-hidden="true">↗</span></a>
           <a class="place" href="https://boosty.to/fix0r" target="_blank" rel="noopener noreferrer"><span><strong>Boosty</strong><small>За кадром и поддержка</small></span><span aria-hidden="true">↗</span></a>
         </div>

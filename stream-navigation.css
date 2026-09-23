@@ -1,0 +1,74 @@
+.header {
+  height: auto;
+  min-height: 108px;
+  padding-top: 20px;
+  padding-bottom: 20px;
+}
+.header .brand,
+.header .welcome-badge { flex-shrink: 0; }
+.header nav {
+  min-width: 0;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  column-gap: 20px;
+  row-gap: 10px;
+}
+.header nav a.live-nav-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 10px 15px;
+  border: 1px solid #a05064;
+  border-radius: 999px;
+  background: #35202e;
+  color: #ffe8ed;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.4;
+  white-space: normal;
+  text-align: center;
+  text-decoration: none;
+  transition: background .2s, border-color .2s;
+}
+.header nav a.live-nav-link:hover {
+  background: #4b293b;
+  border-color: #ee8297;
+  color: #fff;
+}
+.header nav a.live-nav-link:focus-visible {
+  outline: 3px solid #e0a080;
+  outline-offset: 4px;
+}
+.header nav .live-nav-dot {
+  display: block;
+  flex: 0 0 8px;
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border-radius: 50%;
+  background: #ff5268;
+  box-shadow: 0 0 0 4px #ff526817;
+}
+#twitch-stream { scroll-margin-top: 24px; }
+@media (max-width: 1100px) {
+  .header { flex-wrap: wrap; }
+  .header nav {
+    order: 3;
+    flex-basis: 100%;
+    margin-left: 0;
+    justify-content: flex-start;
+  }
+}
+@media (max-width: 760px) {
+  .header { min-height: 90px; gap: 16px; }
+  .header nav { gap: 10px 16px; }
+  .header nav a { min-height: 44px; align-content: center; }
+  .header nav a.live-nav-link { display: inline-flex; font-size: 14px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .header nav a.live-nav-link { transition: none; }
+}

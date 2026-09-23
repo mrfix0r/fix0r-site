@@ -1,0 +1,89 @@
+.twitch-stream {
+  padding-block: 16px 64px;
+  scroll-margin-top: 24px;
+}
+.twitch-stream-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 20px 32px;
+  margin-bottom: 24px;
+}
+.twitch-stream-kicker {
+  margin: 0 0 12px;
+  color: #c5acdd;
+  font-size: .875rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+}
+.twitch-stream-heading h2 {
+  margin: 0;
+  color: var(--ink, #f5ece7);
+}
+.twitch-stream-intro,
+.twitch-stream-note {
+  color: var(--muted, #bcb0c6);
+  font-size: 1rem;
+  line-height: 1.65;
+}
+.twitch-stream-intro { margin: 12px 0 0; }
+.twitch-stream .twitch-stream-link {
+  min-height: 48px;
+  padding: 14px 20px;
+  border: 1px solid #b388e0;
+  background: #6938a0;
+  color: #fff;
+  font-size: .9375rem;
+  line-height: 1.4;
+  text-align: center;
+  white-space: normal;
+  text-decoration: none;
+}
+.twitch-stream .twitch-stream-link:hover { background: #7c48b6; }
+.twitch-stream a:focus-visible {
+  outline: 3px solid #e0a080;
+  outline-offset: 5px;
+}
+.twitch-player-window {
+  container: fc-twitch / inline-size;
+  width: 100%;
+  min-width: 0;
+  border-radius: 18px;
+  background: #100c17;
+  box-shadow: 0 0 0 1px #584067;
+}
+.twitch-embed-frame {
+  display: block;
+  width: 100%;
+  height: auto;
+  min-height: 300px;
+  aspect-ratio: 16 / 9;
+  border: 0;
+  border-radius: inherit;
+}
+.twitch-mobile-note { display: none; }
+.twitch-stream-note { margin: 16px 0 0; }
+.twitch-stream-note a {
+  color: #e0a080;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+/* Twitch requires at least 400 × 300 CSS pixels. Keep its controls unclipped. */
+@container fc-twitch (max-width: 399px) {
+  .twitch-embed-frame { display: none; }
+  .twitch-mobile-note {
+    display: grid;
+    justify-items: start;
+    gap: 20px;
+    padding: 28px 22px;
+    color: #f5ece7;
+    font-size: 1rem;
+    line-height: 1.65;
+  }
+  .twitch-mobile-note p { margin: 0; }
+}
+@media (max-width: 760px) {
+  .twitch-stream { padding-block: 8px 40px; }
+  .twitch-stream-heading { gap: 18px; margin-bottom: 20px; }
+}
