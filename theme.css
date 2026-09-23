@@ -20,7 +20,6 @@
 .site-home .hero-art .theme-art-forest { display:none; }
 .dkp-app header { gap:16px; flex-wrap:wrap; }
 .dkp-app .header-tools { flex-wrap:wrap; justify-content:flex-end; }
-.dkp-app .dkp-tavern-art { display:none; }
 @media(max-width:1100px) { .site-home .header nav { flex-basis:100%; } }
 @media(max-width:500px) {
   .site-home .header-tools { gap:8px; }
@@ -91,12 +90,14 @@ html[data-theme="forest"] .site-home .brand-mark { background:#364838; color:#f2
 [data-theme="forest"] .dkp-app :where(p,small,.brand span,footer,.announcement-meta) { color:#58604e; }
 [data-theme="forest"] .dkp-app :is(.brand,.identity,label) { color:#283c2e; }
 [data-theme="forest"] .dkp-app :is(.eyebrow,th,footer span) { color:#805436; }
-/* The complete illustration sits below the copy, without any overlay. */
-[data-theme="forest"] .dkp-app aside { background:none; }
-[data-theme="forest"] .dkp-app .crest { display:none; }
-[data-theme="forest"] .dkp-app .dkp-tavern-art {
-  display:block; width:100%; height:auto; max-height:340px;
-  object-fit:contain; margin:20px 0 16px;
+/* Keep the original background placement, with the illustration as the only layer. */
+[data-theme="forest"] .dkp-app aside { background:url('/forest-green.svg') center bottom/cover no-repeat; }
+[data-theme="forest"] .dkp-app .crest { color:#f2e2cbe6; text-shadow:0 2px 4px #283c2e; }
+@media(min-width:801px) {
+  [data-theme="forest"] .dkp-app aside :is(h1,p,small) {
+    color:#fff5e5;
+    text-shadow:0 1px 2px #1d3021,1px 0 #1d3021,-1px 0 #1d3021,0 -1px #1d3021;
+  }
 }
 [data-theme="forest"] .dkp-app .card { background:#f9efdf; border-color:#c2bba3; box-shadow:0 16px 60px #36483810; }
 [data-theme="forest"] .dkp-app :is(input,select,textarea) { background:#fff8ed; color:#283c2e; border-color:#8d927d; color-scheme:light; }
@@ -145,4 +146,4 @@ html[data-theme="forest"] .site-home .brand-mark { background:#364838; color:#f2
 [data-theme="forest"] .dkp-app .announcement-banner { background:#efdfc2; border-color:#b79466; }
 [data-theme="forest"] .dkp-app .announcement-banner :is(summary,summary strong,small) { color:#674725; }
 [data-theme="forest"] .dkp-app .announcement-body { color:#283c2e; }
-@media(max-width:800px) { [data-theme="forest"] .dkp-app .dkp-tavern-art { display:none; } }
+@media(max-width:800px) { [data-theme="forest"] .dkp-app aside { background:none; } }
