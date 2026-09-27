@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+require_once __DIR__.'/i18n.php';
 
 final class AuthError extends RuntimeException {}
 
@@ -16,14 +17,14 @@ final class Auth {
     public static function email(string $value): string {
         $value = strtolower(trim($value));
         if (strlen($value) > 254 || !filter_var($value, FILTER_VALIDATE_EMAIL) || preg_match('/[^\x21-\x7E]/', $value)) {
-            throw new AuthError('Укажи корректный email.');
+            throw new AuthError(t('Укажи корректный email.'));
         }
         return $value;
     }
     public static function password(string $value): string {
         $length = preg_match_all('/./us', $value);
         if ($length === false || $length < 12 || $length > 128 || strlen($value) > 512 || str_contains($value, "\0")) {
-            throw new AuthError('Пароль должен содержать от 12 до 128 символов.');
+            throw new AuthError(t('Пароль должен содержать от 12 до 128 символов.'));
         }
         return $value;
     }
@@ -40,7 +41,7 @@ final class Auth {
             $this->query('INSERT INTO dkp_limits(bucket,hits,expires_at) VALUES(?,1,?)', [$bucket,$now+$seconds]);
         } catch (PDOException $e) {
             if (!in_array((string)$e->getCode(), ['23000','23505'], true)) throw $e;
-            throw new AuthError('Слишком много попыток. Попробуй через 15 минут.');
+            throw new AuthError(t('Слишком много попыток. Попробуй через 15 минут.'));
         }
         if (random_int(1, 100) === 1) $this->query('DELETE FROM dkp_limits WHERE expires_at<?', [$now]);
     }
@@ -52,7 +53,7 @@ final class Auth {
     }
     public function register(string $email, string $nickname, string $password, bool $newMember=false): void {
         $email = self::email($email); $nickname = trim($nickname);
-        if (!preg_match('/^[^\p{C}]{1,32}$/u', $nickname)) throw new AuthError('Игровой ник: от 1 до 32 символов без управляющих знаков.');
+        if (!preg_match('/^[^\p{C}]{1,32}$/u', $nickname)) throw new AuthError(t('Игровой ник: от 1 до 32 символов без управляющих знаков.'));
         $hash = self::hashPassword($password);
         $this->db->beginTransaction();
         try {
@@ -95,14 +96,14 @@ final class Auth {
         $this->query('DELETE FROM dkp_tokens WHERE expires_at<=?', [time()]);
         $this->query('INSERT INTO dkp_tokens(token_hash,user_id,purpose,expires_at) VALUES(?,?,?,?)',
             [hash('sha256',$raw),$id,$purpose,time()+($purpose==='verify'?86400:1800)]);
-        $url = $this->origin . '/dkp/?page=' . $purpose . '&token=' . $raw;
-        $subject = $purpose === 'verify' ? 'Подтверждение регистрации' : 'Восстановление пароля';
+        $url = $this->origin . '/dkp/?page=' . $purpose . '&lang=' . fc_language() . '&token=' . $raw;
+        $subject = $purpose === 'verify' ? t('Подтверждение регистрации') : t('Восстановление пароля');
         $body = $purpose === 'verify'
-            ? "Подтверди свой email по ссылке ниже. Понадобится пароль, указанный при регистрации. Ссылка действует 24 часа."
-            : "Установи новый пароль по ссылке ниже. Ссылка действует 30 минут.";
-        if (!(($this->mailer)($email, 'SleepingForest — '.$subject, $body."\n\n".$url."\n\nЕсли ты не отправлял этот запрос, ничего делать не нужно."))) {
+            ? t("Подтверди свой email по ссылке ниже. Понадобится пароль, указанный при регистрации. Ссылка действует 24 часа.")
+            : t("Установи новый пароль по ссылке ниже. Ссылка действует 30 минут.");
+        if (!(($this->mailer)($email, 'SleepingForest — '.$subject, $body."\n\n".$url.t("\n\nЕсли ты не отправлял этот запрос, ничего делать не нужно.")))) {
             $this->query('DELETE FROM dkp_tokens WHERE token_hash=?', [hash('sha256',$raw)]);
-            throw new AuthError('Сейчас не удалось отправить письмо. Попробуй позже или сообщи администратору сайта.');
+            throw new AuthError(t('Сейчас не удалось отправить письмо. Попробуй позже или сообщи администратору сайта.'));
         }
     }
     public function requestToken(string $email, string $purpose): void {
@@ -110,28 +111,28 @@ final class Auth {
         if ($user && ($purpose === 'reset' || !$user['verified_at'])) $this->sendToken((int)$user['id'],$user['email'],$purpose);
     }
     public function token(string $raw, string $purpose): array {
-        if (!preg_match('/^[a-f0-9]{64}$/D', $raw)) throw new AuthError('Ссылка недействительна или устарела. Запроси новое письмо.');
+        if (!preg_match('/^[a-f0-9]{64}$/D', $raw)) throw new AuthError(t('Ссылка недействительна или устарела. Запроси новое письмо.'));
         $row = $this->query('SELECT t.user_id,u.password_hash FROM dkp_tokens t JOIN dkp_users u ON u.id=t.user_id WHERE t.token_hash=? AND t.purpose=? AND t.expires_at>?',
             [hash('sha256',$raw),$purpose,time()])->fetch();
-        if (!$row) throw new AuthError('Ссылка недействительна или устарела. Запроси новое письмо.');
+        if (!$row) throw new AuthError(t('Ссылка недействительна или устарела. Запроси новое письмо.'));
         return $row;
     }
     public function redeem(string $raw, string $purpose, string $password): void {
-        if (!in_array($purpose, ['verify','reset'], true)) throw new AuthError('Некорректное действие.');
+        if (!in_array($purpose, ['verify','reset'], true)) throw new AuthError(t('Некорректное действие.'));
         $row = $this->token($raw, $purpose);
-        if ($purpose === 'verify' && !password_verify($password,$row['password_hash'])) throw new AuthError('Пароль не совпадает с указанным при регистрации.');
+        if ($purpose === 'verify' && !password_verify($password,$row['password_hash'])) throw new AuthError(t('Пароль не совпадает с указанным при регистрации.'));
         $hash = $purpose === 'reset' ? self::hashPassword($password) : null;
         $this->db->beginTransaction();
         try {
             // Same lock order as all roster/link/award operations. Reset also verifies email.
             if($this->query('UPDATE fc_write_lock SET revision=revision+1 WHERE id=1')->rowCount()!==1)throw new RuntimeException('Missing write lock');
             $q = $this->query('DELETE FROM dkp_tokens WHERE token_hash=? AND purpose=? AND expires_at>?', [hash('sha256',$raw),$purpose,time()]);
-            if ($q->rowCount() !== 1) throw new AuthError('Ссылка уже использована. Запроси новое письмо.');
+            if ($q->rowCount() !== 1) throw new AuthError(t('Ссылка уже использована. Запроси новое письмо.'));
             if ($purpose === 'reset') {
                 $this->query('UPDATE dkp_users SET password_hash=?,verified_at=?,session_version=session_version+1 WHERE id=?', [$hash,time(),$row['user_id']]);
             } else {
                 $q = $this->query('UPDATE dkp_users SET verified_at=?,session_version=session_version+1 WHERE id=? AND password_hash=?', [time(),$row['user_id'],$row['password_hash']]);
-                if ($q->rowCount() !== 1) throw new AuthError('Пароль изменился. Запроси новое письмо.');
+                if ($q->rowCount() !== 1) throw new AuthError(t('Пароль изменился. Запроси новое письмо.'));
             }
             $this->createRegistrationMember((int)$row['user_id']);
             $this->query('DELETE FROM dkp_tokens WHERE user_id=?', [$row['user_id']]);
@@ -142,18 +143,18 @@ final class Auth {
         $user = $this->byEmail(self::email($email));
         // A real fixed hash keeps non-existent accounts on the password verification path.
         $dummy = '$argon2id$v=19$m=19456,t=2,p=1$RWNtWnVHYnA5c1R2UVdzag$5VSvZfmVvSI+bLp/jRy9LKYwVpTZrg+wBnCYKVCNYGE';
-        if (strlen($password)>512 || !password_verify($password, $user['password_hash'] ?? $dummy)) throw new AuthError('Неверный email или пароль.');
-        if (!$user['verified_at']) throw new AuthError('Сначала подтверди email. Письмо можно запросить повторно.');
+        if (strlen($password)>512 || !password_verify($password, $user['password_hash'] ?? $dummy)) throw new AuthError(t('Неверный email или пароль.'));
+        if (!$user['verified_at']) throw new AuthError(t('Сначала подтверди email. Письмо можно запросить повторно.'));
         return $this->user((int)$user['id']);
     }
     public function changePassword(int $id, string $old, string $new): void {
         $user = $this->query('SELECT password_hash FROM dkp_users WHERE id=?',[$id])->fetch();
-        if (!$user || strlen($old)>512 || !password_verify($old,$user['password_hash'])) throw new AuthError('Текущий пароль указан неверно.');
+        if (!$user || strlen($old)>512 || !password_verify($old,$user['password_hash'])) throw new AuthError(t('Текущий пароль указан неверно.'));
         $hash = self::hashPassword($new);
         $this->db->beginTransaction();
         try {
             $q = $this->query('UPDATE dkp_users SET password_hash=?,session_version=session_version+1 WHERE id=? AND password_hash=?',[$hash,$id,$user['password_hash']]);
-            if ($q->rowCount() !== 1) throw new AuthError('Пароль уже изменился. Войди заново.');
+            if ($q->rowCount() !== 1) throw new AuthError(t('Пароль уже изменился. Войди заново.'));
             $this->query('DELETE FROM dkp_tokens WHERE user_id=?',[$id]);
             $this->db->commit();
         } catch (Throwable $e) { $this->db->rollBack(); throw $e; }

@@ -11,13 +11,13 @@ final class TelegramGuild {
     }
     private function lock():void {if($this->a->query('UPDATE fc_write_lock SET revision=revision+1 WHERE id=1')->rowCount()!==1)throw new RuntimeException('Missing DKP lock');}
     private function user(int $id,int $version):array {
-        $u=$this->a->user($id);if(!$u || !$u['verified_at'] || (int)$u['session_version']!==$version)throw new AuthError('Войди заново.');return $u;
+        $u=$this->a->user($id);if(!$u || !$u['verified_at'] || (int)$u['session_version']!==$version)throw new AuthError(t('Войди заново.'));return $u;
     }
     public function subscription(int $account):array|false{return $this->a->query('SELECT username,subscribed,linked_at FROM fc_tg_subscriptions WHERE web_user_id=?',[$account])->fetch();}
     public function startLink(int $actor,int $version):array {
-        if(!$this->enabled())throw new AuthError('Telegram-бот ещё не настроен.');
+        if(!$this->enabled())throw new AuthError(t('Telegram-бот ещё не настроен.'));
         $db=$this->a->db;$db->beginTransaction();try{
-            $this->lock();$this->user($actor,$version);$member=$this->member($actor);if($member===false)throw new AuthError('Сначала привяжи активный профиль ДКП.');
+            $this->lock();$this->user($actor,$version);$member=$this->member($actor);if($member===false)throw new AuthError(t('Сначала привяжи активный профиль ДКП.'));
             $raw=bin2hex(random_bytes(24));$until=$this->now()+600;
             $this->a->query('DELETE FROM fc_tg_tokens WHERE web_user_id=? OR expires_at<=?',[$actor,$this->now()]);
             $this->a->query('INSERT INTO fc_tg_tokens VALUES(?,?,?,?,?)',[hash('sha256',$raw),$actor,$member,$version,$until]);$db->commit();
@@ -32,21 +32,21 @@ final class TelegramGuild {
         }catch(Throwable $e){if($db->inTransaction())$db->rollBack();throw $e;}
     }
     public function stats(array $user,string $id):array|false {
-        if($user['role']!=='admin')throw new AuthError('Доступно администратору.');
+        if($user['role']!=='admin')throw new AuthError(t('Доступно администратору.'));
         if(!$this->a->query('SELECT announcement_id FROM fc_tg_batches WHERE announcement_id=?',[$id])->fetchColumn())return false;
         return $this->a->query('SELECT status,COUNT(*) AS total FROM fc_tg_deliveries WHERE announcement_id=? GROUP BY status',[$id])->fetchAll();
     }
     public function queue(int $actor,int $version,string $id,string $revision):int {
-        if(!$this->enabled())throw new AuthError('Telegram-бот ещё не настроен.');
+        if(!$this->enabled())throw new AuthError(t('Telegram-бот ещё не настроен.'));
         $id=DKP::id($id);$db=$this->a->db;$db->beginTransaction();try{
-            $this->lock();$u=$this->user($actor,$version);if($u['role']!=='admin')throw new AuthError('Оповещать может только администратор.');
+            $this->lock();$u=$this->user($actor,$version);if($u['role']!=='admin')throw new AuthError(t('Оповещать может только администратор.'));
             // Unique announcement_id guarantees one broadcast even across different form keys.
-            if($this->a->query('SELECT announcement_id FROM fc_tg_batches WHERE announcement_id=?',[$id])->fetchColumn())throw new AuthError('Рассылка этого объявления уже создана. Повторная отправка не выполняется.');
+            if($this->a->query('SELECT announcement_id FROM fc_tg_batches WHERE announcement_id=?',[$id])->fetchColumn())throw new AuthError(t('Рассылка этого объявления уже создана. Повторная отправка не выполняется.'));
             $n=$this->a->query('SELECT * FROM fc_announcements WHERE id=?',[$id])->fetch();
-            if(!$n || (int)$n['archived'] || ($n['expires_at']!==null && (int)$n['expires_at']<=$this->now()))throw new AuthError('Объявление уже недоступно.');
-            if((string)$n['revision']!==$revision)throw new AuthError('Объявление изменилось. Обнови страницу перед рассылкой.');
+            if(!$n || (int)$n['archived'] || ($n['expires_at']!==null && (int)$n['expires_at']<=$this->now()))throw new AuthError(t('Объявление уже недоступно.'));
+            if((string)$n['revision']!==$revision)throw new AuthError(t('Объявление изменилось. Обнови страницу перед рассылкой.'));
             $recipients=$this->a->query('SELECT s.* FROM fc_tg_subscriptions s JOIN fc_web_links l ON l.web_user_id=s.web_user_id AND l.member_id=s.member_id JOIN dkp_users u ON u.id=s.web_user_id WHERE s.subscribed=1 AND u.verified_at IS NOT NULL AND NOT EXISTS(SELECT 1 FROM fc_member_archive ar WHERE ar.member_id=s.member_id)')->fetchAll();
-            if(!$recipients)throw new AuthError('Пока нет подписавшихся участников.');
+            if(!$recipients)throw new AuthError(t('Пока нет подписавшихся участников.'));
             preg_match_all('/./us',$n['body'],$chars);$excerpt=implode('',array_slice($chars[0],0,1600)).(count($chars[0])>1600?"…":'');
             $text="Объявление гильдии\n\n".$n['title']."\n\n".$excerpt."\n\n".$this->origin.'/dkp/?page=announcements&announcement='.$id."\n\nОтписаться: /stop";
             $this->a->query('INSERT INTO fc_tg_batches VALUES(?,?,?,?,?)',[$id,$n['revision'],$actor,$this->now(),$text]);

@@ -1,20 +1,24 @@
 <?php
 declare(strict_types=1);
+require_once __DIR__.'/i18n.php';
+if (isset($_GET['lang']) && is_string($_GET['lang']) && in_array($_GET['lang'], ['ru', 'en'], true)) {
+    setcookie('fc_language', fc_language(), ['expires'=>time()+31536000, 'path'=>'/', 'secure'=>(($_SERVER['HTTPS']??'')==='on' || ($_SERVER['HTTPS']??'')==='1'), 'httponly'=>false, 'samesite'=>'Lax']);
+}
 ini_set('display_errors','0');
 header('Content-Type: text/html; charset=utf-8');
 header("Content-Security-Policy: default-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; script-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'");
 header('Referrer-Policy: no-referrer'); header('X-Content-Type-Options: nosniff'); header('Cache-Control: no-store');
 // Cheap rejection before database, session creation and password hashing.
 $method=$_SERVER['REQUEST_METHOD']??'GET';
-if(!in_array($method,['GET','HEAD','POST'],true)){http_response_code(405);header('Allow: GET, HEAD, POST');exit('Метод не поддерживается.');}
-if((int)($_SERVER['CONTENT_LENGTH']??0)>32768){http_response_code(413);exit('Слишком большой запрос.');}
-if($method==='POST')foreach($_POST as $value)if(!is_string($value)){http_response_code(400);exit('Некорректный запрос.');}
+if(!in_array($method,['GET','HEAD','POST'],true)){http_response_code(405);header('Allow: GET, HEAD, POST');exit(t('Метод не поддерживается.'));}
+if((int)($_SERVER['CONTENT_LENGTH']??0)>32768){http_response_code(413);exit(t('Слишком большой запрос.'));}
+if($method==='POST')foreach($_POST as $value)if(!is_string($value)){http_response_code(400);exit(t('Некорректный запрос.'));}
 require __DIR__.'/auth.php';
 require __DIR__.'/dkp_store.php';
 require __DIR__.'/announcements_store.php';
 require __DIR__.'/telegram_store.php';
 function h(string $s): string { return htmlspecialchars($s, ENT_QUOTES|ENT_SUBSTITUTE, 'UTF-8'); }
-function go(string $page, string $message=''): never { if ($message) $_SESSION['flash']=$message; header('Location: /dkp/?page='.$page, true, 303); exit; }
+function go(string $page, string $message=''): never { if ($message) $_SESSION['flash']=$message; header('Location: /dkp/?page='.$page.'&lang='.fc_language(), true, 303); exit; }
 function field(string $name,string $label,string $type='text',string $auto=''): void {
     echo '<label>'.h($label).'<input name="'.h($name).'" type="'.h($type).'" required maxlength="'.($type==='password'?'128':'254').'" autocomplete="'.h($auto).'"'.($type==='password'?' minlength="12"':'').'></label>';
 }
@@ -36,7 +40,7 @@ try {
         $auth->rate('request-ip:'.$ip,120,60);
         if($method==='POST')$auth->rate('post-burst-ip:'.$ip,30,60);
     } catch(AuthError $e) {
-        http_response_code(429);header('Retry-After: 60');exit('Слишком много запросов. Подожди минуту и повтори.');
+        http_response_code(429);header('Retry-After: 60');exit(t('Слишком много запросов. Подожди минуту и повтори.'));
     }
     ini_set('session.use_strict_mode','1'); ini_set('session.use_only_cookies','1');
     session_name('FC_DKP'); session_set_cookie_params(['lifetime'=>0,'path'=>'/dkp','secure'=>true,'httponly'=>true,'samesite'=>'Lax']); session_start();
@@ -52,7 +56,7 @@ try {
     $tgConfig=is_file(__DIR__.'/telegram_config.php')?require __DIR__.'/telegram_config.php':[];
     $telegram=new TelegramGuild($auth,is_array($tgConfig)?$tgConfig:[],$origin);
     $auctionWarning='';
-    if($user)try{$dkp->settleDue();}catch(Throwable $e){error_log('DKP settlement: '.get_class($e).' code='.$e->getCode());$auctionWarning='Не удалось завершить истёкшие аукционы. Ставки остаются в резерве. Сообщи администратору.';}
+    if($user)try{$dkp->settleDue();}catch(Throwable $e){error_log('DKP settlement: '.get_class($e).' code='.$e->getCode());$auctionWarning=t('Не удалось завершить истёкшие аукционы. Ставки остаются в резерве. Сообщи администратору.');}
     $ready=true;
 } catch(Throwable $e) { http_response_code(503); error_log('DKP initialization: '.get_class($e).' code='.$e->getCode().' driver='.($e instanceof PDOException ? ($e->errorInfo[1] ?? 'unknown') : 'n/a')); }
 $page=is_string($_GET['page']??null)?$_GET['page']:($user?'profile':'login');
@@ -65,9 +69,9 @@ if ($ready && isset($_GET['token']) && in_array($page,['verify','reset'],true)) 
 }
 if ($ready && $_SERVER['REQUEST_METHOD']==='POST') {
     try {
-        if ((int)($_SERVER['CONTENT_LENGTH']??0)>32768) throw new AuthError('Слишком большой запрос.');
-        foreach ($_POST as $value) if (!is_string($value)) throw new AuthError('Некорректный запрос.');
-        if (!hash_equals($_SESSION['csrf'],$_POST['csrf']??'')) throw new AuthError('Сеанс формы истёк. Обнови страницу и повтори.');
+        if ((int)($_SERVER['CONTENT_LENGTH']??0)>32768) throw new AuthError(t('Слишком большой запрос.'));
+        foreach ($_POST as $value) if (!is_string($value)) throw new AuthError(t('Некорректный запрос.'));
+        if (!hash_equals($_SESSION['csrf'],$_POST['csrf']??'')) throw new AuthError(t('Сеанс формы истёк. Обнови страницу и повтори.'));
         $action=$_POST['action']??'';
         $auth->rate('post:'.($_SERVER['REMOTE_ADDR']??''),40);
         $email=$_POST['email']??''; $password=$_POST['password']??'';
@@ -76,37 +80,37 @@ if ($ready && $_SERVER['REQUEST_METHOD']==='POST') {
             $auth->rate('mail-email:'.Auth::email($email),3);
         }
         if ($action==='cw_schedule') {
-            if (!$user) throw new AuthError('Войди в кабинет.');
+            if (!$user) throw new AuthError(t('Войди в кабинет.'));
             require_once __DIR__.'/scheduled_events.php';
             $schedule=new ScheduledEvents($auth,require __DIR__.'/cw_schedule.php');
             $schedule->setEnabled((int)$user['id'],$_SESSION['version'],$_POST['enabled']??'',$_POST['revision']??'');
-            go('events',($_POST['enabled']??'')==='1'?'Автосоздание ЧВ включено. Пропущенные события создаваться не будут.':'Автосоздание ЧВ отключено. Уже созданные события сохранены.');
+            go('events',($_POST['enabled']??'')==='1'?t('Автосоздание ЧВ включено. Пропущенные события создаваться не будут.'):t('Автосоздание ЧВ отключено. Уже созданные события сохранены.'));
         }
         if(in_array($action,['tg_link','tg_unlink','tg_notify'],true)) {
-            if(!$user)throw new AuthError('Войди в кабинет.');
+            if(!$user)throw new AuthError(t('Войди в кабинет.'));
             if($action==='tg_link'){
                 $_SESSION['tg_link']=$telegram->startLink((int)$user['id'],$_SESSION['version']);
-                go('profile','Ссылка на бота готова. Раскрой раздел Telegram, открой бота и нажми Start.');
+                go('profile',t('Ссылка на бота готова. Раскрой раздел Telegram, открой бота и нажми Start.'));
             }
             if($action==='tg_unlink'){
-                $telegram->unlink((int)$user['id'],$_SESSION['version']);unset($_SESSION['tg_link']);go('profile','Telegram отвязан, подписка отключена.');
+                $telegram->unlink((int)$user['id'],$_SESSION['version']);unset($_SESSION['tg_link']);go('profile',t('Telegram отвязан, подписка отключена.'));
             }
-            if(($_POST['confirmed']??'')!=='1')throw new AuthError('Подтверди отправку подписавшимся участникам.');
+            if(($_POST['confirmed']??'')!=='1')throw new AuthError(t('Подтверди отправку подписавшимся участникам.'));
             $count=$telegram->queue((int)$user['id'],$_SESSION['version'],$_POST['id']??'',$_POST['revision']??'');
-            go('announcements&announcement='.DKP::id($_POST['id']), 'В очередь добавлено сообщений: '.$count.'.');
+            go('announcements&announcement='.DKP::id($_POST['id']), t('В очередь добавлено сообщений: ').$count.'.');
         }
         if(str_starts_with($action,'ann_')) {
-            if(!$user)throw new AuthError('Войди в кабинет.');
+            if(!$user)throw new AuthError(t('Войди в кабинет.'));
             $kind=substr($action,4);
-            if($kind==='archive' && ($_POST['confirmed']??'')!=='1')throw new AuthError('Подтверди удаление объявления.');
+            if($kind==='archive' && ($_POST['confirmed']??'')!=='1')throw new AuthError(t('Подтверди удаление объявления.'));
             $payload=[];foreach(['id','revision','title','body','expires','pinned','requires_ack','reset_ack'] as $name)$payload[$name]=$_POST[$name]??'';
             $announcementId=$announcements->perform((int)$user['id'],$_SESSION['version'],$_POST['request_key']??'',$kind,$payload);
-            go('announcements'.($kind==='archive'?'':'&announcement='.$announcementId),$kind==='ack'?'Прочтение подтверждено.':'Объявление сохранено.');
+            go('announcements'.($kind==='archive'?'':'&announcement='.$announcementId),$kind==='ack'?t('Прочтение подтверждено.'):t('Объявление сохранено.'));
         }
         if (str_starts_with($action,'dkp_')) {
-            if (!$user) throw new AuthError('Войди в кабинет.');
+            if (!$user) throw new AuthError(t('Войди в кабинет.'));
             $kind=substr($action,4);
-            if (in_array($kind,['archive','restore','adjust','link','evt_award','evt_cancel','auc_bid','auc_cancel'],true) && ($_POST['confirmed']??'')!=='1') throw new AuthError('Подтверди проверку данных.');
+            if (in_array($kind,['archive','restore','adjust','link','evt_award','evt_cancel','auc_bid','auc_cancel'],true) && ($_POST['confirmed']??'')!=='1') throw new AuthError(t('Подтверди проверку данных.'));
             $payload=[];
             if ($kind==='adjust') {
                 $ids=[]; foreach($_POST as $key=>$value) if(str_starts_with($key,'member_') && $value==='1') $ids[]=substr($key,7);
@@ -130,75 +134,75 @@ if ($ready && $_SERVER['REQUEST_METHOD']==='POST') {
                 if($kind==='auc_cancel')$payload['reason']=$_POST['reason']??'';
             }
             $changed=$dkp->perform((int)$user['id'],$_SESSION['version'],$_POST['request_key']??'',$kind,$payload);
-            if(str_starts_with($kind,'auc_'))go('auctions'.($kind!=='auc_create'?'&auction='.DKP::id($payload['auction']):''),$changed?($kind==='auc_bid'?'Ставка принята. Очки зарезервированы.':'Аукцион сохранён.'):'Это действие уже выполнено. Повторных изменений нет.');
-            if(str_starts_with($kind,'evt_'))go('events'.($kind!=='evt_create'?'&event='.DKP::id($payload['event']):''),$changed?match($kind){'evt_award'=>'Награда начислена. Событие закрыто.','evt_join'=>'Ты отмечен в событии. Награду выдаст офицер после проверки.','evt_leave'=>'Твоя отметка участия снята.',default=>'Событие сохранено.'}:'Это действие уже выполнено. Повторных изменений нет.');
-            go('manage',$changed?'Изменения сохранены.':'Эта операция уже выполнена. Повторно ничего не изменено.');
+            if(str_starts_with($kind,'auc_'))go('auctions'.($kind!=='auc_create'?'&auction='.DKP::id($payload['auction']):''),$changed?($kind==='auc_bid'?t('Ставка принята. Очки зарезервированы.'):t('Аукцион сохранён.')):t('Это действие уже выполнено. Повторных изменений нет.'));
+            if(str_starts_with($kind,'evt_'))go('events'.($kind!=='evt_create'?'&event='.DKP::id($payload['event']):''),$changed?match($kind){'evt_award'=>t('Награда начислена. Событие закрыто.'),'evt_join'=>t('Ты отмечен в событии. Награду выдаст офицер после проверки.'),'evt_leave'=>t('Твоя отметка участия снята.'),default=>t('Событие сохранено.')}:t('Это действие уже выполнено. Повторных изменений нет.'));
+            go('manage',$changed?t('Изменения сохранены.'):t('Эта операция уже выполнена. Повторно ничего не изменено.'));
         }
         switch($action) {
-            case 'register': $auth->register($email,$_POST['nickname']??'',$password,($_POST['new_member']??'')==='1'); go('login','Если регистрация доступна для этого email, письмо с подтверждением отправлено. Проверь также папку «Спам».');
-            case 'forgot': case 'resend': $auth->requestToken($email,$action==='forgot'?'reset':'verify'); go($action,'Если для этого email доступно действие, письмо отправлено. Проверь также папку «Спам».');
+            case 'register': $auth->register($email,$_POST['nickname']??'',$password,($_POST['new_member']??'')==='1'); go('login',t('Если регистрация доступна для этого email, письмо с подтверждением отправлено. Проверь также папку «Спам».'));
+            case 'forgot': case 'resend': $auth->requestToken($email,$action==='forgot'?'reset':'verify'); go($action,t('Если для этого email доступно действие, письмо отправлено. Проверь также папку «Спам».'));
             case 'verify': case 'reset':
-                $auth->redeem($_SESSION[$action.'_token']??'',$action,$password); unset($_SESSION[$action.'_token']); go('login',$action==='verify'?'Email подтверждён. Теперь можно войти.':'Пароль изменён. Войди с новым паролем.');
+                $auth->redeem($_SESSION[$action.'_token']??'',$action,$password); unset($_SESSION[$action.'_token']); go('login',$action==='verify'?t('Email подтверждён. Теперь можно войти.'):t('Пароль изменён. Войди с новым паролем.'));
             case 'login':
                 $auth->rate('login-ip:'.($_SERVER['REMOTE_ADDR']??''),20);
                 $auth->rate('login:'.Auth::email($email),10); $u=$auth->login($email,$password);
                 session_regenerate_id(true); $_SESSION=['uid'=>(int)$u['id'],'version'=>(int)$u['session_version'],'born'=>time(),'last'=>time(),'csrf'=>bin2hex(random_bytes(32))]; go('profile');
-            case 'logout': $_SESSION=[]; session_regenerate_id(true); $_SESSION['csrf']=bin2hex(random_bytes(32)); go('login','Ты вышел из кабинета.');
+            case 'logout': $_SESSION=[]; session_regenerate_id(true); $_SESSION['csrf']=bin2hex(random_bytes(32)); go('login',t('Ты вышел из кабинета.'));
             case 'nickname':
-                if (!$user) throw new AuthError('Войди в кабинет.');
-                $nick=trim($_POST['nickname']??''); if (!preg_match('/^[^\p{C}]{1,32}$/u',$nick)) throw new AuthError('Ник должен содержать от 1 до 32 символов.');
-                $auth->query('UPDATE dkp_users SET nickname=? WHERE id=?',[$nick,$user['id']]); go('profile','Игровой ник изменён.');
+                if (!$user) throw new AuthError(t('Войди в кабинет.'));
+                $nick=trim($_POST['nickname']??''); if (!preg_match('/^[^\p{C}]{1,32}$/u',$nick)) throw new AuthError(t('Ник должен содержать от 1 до 32 символов.'));
+                $auth->query('UPDATE dkp_users SET nickname=? WHERE id=?',[$nick,$user['id']]); go('profile',t('Игровой ник изменён.'));
             case 'password':
-                if (!$user) throw new AuthError('Войди в кабинет.');
-                $auth->changePassword((int)$user['id'],$_POST['old_password']??'',$password); $_SESSION=[]; session_regenerate_id(true); $_SESSION['csrf']=bin2hex(random_bytes(32)); go('login','Пароль изменён. Все сеансы завершены. Войди заново.');
-            default: throw new AuthError('Неизвестное действие.');
+                if (!$user) throw new AuthError(t('Войди в кабинет.'));
+                $auth->changePassword((int)$user['id'],$_POST['old_password']??'',$password); $_SESSION=[]; session_regenerate_id(true); $_SESSION['csrf']=bin2hex(random_bytes(32)); go('login',t('Пароль изменён. Все сеансы завершены. Войди заново.'));
+            default: throw new AuthError(t('Неизвестное действие.'));
         }
     } catch(AuthError $e) { $error=$e->getMessage(); http_response_code(400); }
-    catch(Throwable $e) { $error='Не удалось выполнить действие. Попробуй позже.'; http_response_code(503); error_log('DKP request: '.get_class($e)); }
+    catch(Throwable $e) { $error=t('Не удалось выполнить действие. Попробуй позже.'); http_response_code(503); error_log('DKP request: '.get_class($e)); }
 }
 if ($ready && in_array($page,['profile','auctions','events','announcements'],true) && !$user) go('login');
 if ($ready && $page==='manage' && (!$user || !in_array($user['role'],['admin','officer'],true))) go('profile');
-$titles=['announcements'=>'Объявления','auctions'=>'Аукционы гильдии','events'=>'События гильдии','manage'=>'Управление ДКП','login'=>'С возвращением','register'=>'Присоединяйся к гильдии','forgot'=>'Забыл пароль?','resend'=>'Подтвердим почту','verify'=>'Подтверждение email','reset'=>'Новый пароль','profile'=>'Личный кабинет'];
+$titles=['announcements'=>t('Объявления'),'auctions'=>t('Аукционы гильдии'),'events'=>t('События гильдии'),'manage'=>t('Управление ДКП'),'login'=>t('С возвращением'),'register'=>t('Присоединяйся к гильдии'),'forgot'=>t('Забыл пароль?'),'resend'=>t('Подтвердим почту'),'verify'=>t('Подтверждение email'),'reset'=>t('Новый пароль'),'profile'=>t('Личный кабинет')];
 function dkpForm(string $kind):void { formStart('dkp_'.$kind);echo '<input type="hidden" name="request_key" value="'.bin2hex(random_bytes(32)).'">'; }
 function formStart(string $action):void { echo '<form method="post"><input type="hidden" name="csrf" value="'.h($_SESSION['csrf']).'"><input type="hidden" name="action" value="'.h($action).'">'; }
 ?>
-<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title><?=h($titles[$page])?> · FC DKP</title><link rel="icon" href="/favicon.svg"><script src="/theme.js?v=2"></script><link rel="stylesheet" href="/dkp/style.css?v=4.6.1"><link rel="stylesheet" href="/theme.css?v=4"></head><body class="dkp-app">
-<header><a class="brand" href="/">FC <span>TrustTheGame</span></a><div class="header-tools"><button class="theme-toggle" type="button" data-theme-toggle aria-label="Тема «Лес и крем»" aria-pressed="false" hidden><span class="theme-swatch" aria-hidden="true"></span><span data-theme-label>Сумеречный лес</span></button><a href="/">← На главную</a></div></header>
-<main<?= in_array($page,['manage','events','auctions','announcements'],true)?' class="management"':'' ?>><aside><div class="eyebrow">SLEEPINGFOREST / RF ONLINE</div><h1>Сила гильдии —<br>в каждом из нас.</h1><p>Место для твоего игрового профиля.<br>Вход через собственный аккаунт сайта.</p><div class="crest">FC</div><small>Собираемся вместе. Играем на доверии.</small></aside>
+<!doctype html><html lang="<?=fc_language()?>"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title><?=h($titles[$page])?> · FC DKP</title><link rel="icon" href="/favicon.svg"><script src="/language.js?v=1"></script><script src="/theme.js?v=3"></script><link rel="stylesheet" href="/dkp/style.css?v=4.6.1"><link rel="stylesheet" href="/theme.css?v=4"><link rel="stylesheet" href="/language.css?v=1"></head><body class="dkp-app">
+<header><a class="brand" href="<?=fc_language()==='en'?'/en/?lang=en':'/?lang=ru'?>">FC <span>TrustTheGame</span></a><div class="header-tools"><?php fc_language_switch(); ?><button class="theme-toggle" type="button" data-theme-toggle aria-label="<?=h(t('Тема «Лес и крем»'))?>" aria-pressed="false" hidden><span class="theme-swatch" aria-hidden="true"></span><span data-theme-label><?=h(t('Сумеречный лес'))?></span></button><a href="<?=fc_language()==='en'?'/en/?lang=en':'/?lang=ru'?>"><?=h(t('← На главную'))?></a></div></header>
+<main<?= in_array($page,['manage','events','auctions','announcements'],true)?' class="management"':'' ?>><aside><div class="eyebrow">SLEEPINGFOREST / RF ONLINE</div><h1><?=h(t('Сила гильдии —'))?><br><?=h(t('в каждом из нас.'))?></h1><p><?=h(t('Место для твоего игрового профиля.'))?><br><?=h(t('Вход через собственный аккаунт сайта.'))?></p><div class="crest">FC</div><small><?=h(t('Собираемся вместе. Играем на доверии.'))?></small></aside>
 <section class="card">
-<?php if (!$ready): ?><div class="eyebrow">FC DKP</div><h2>Кабинет готовится к открытию</h2><p>Администратору нужно завершить настройку сервера. Попробуй зайти позже.</p><a href="/">Вернуться на главную →</a>
-<?php else: ?><?php if($page==='profile'): ?><h2 class="eyebrow">ЛИЧНЫЙ КАБИНЕТ</h2><?php else: ?><div class="eyebrow">ЛИЧНЫЙ КАБИНЕТ</div><h2><?=h($titles[$page])?></h2><?php endif; ?>
-<?php if(isset($_SESSION['flash'])): ?><p class="notice" role="status"><?=h($_SESSION['flash'])?></p><?php unset($_SESSION['flash']); endif; ?>
-<?php if($error): ?><p class="error" role="alert"><?=h($error)?></p><?php endif; ?>
+<?php if (!$ready): ?><div class="eyebrow">FC DKP</div><h2><?=h(t('Кабинет готовится к открытию'))?></h2><p><?=h(t('Администратору нужно завершить настройку сервера. Попробуй зайти позже.'))?></p><a href="<?=fc_language()==='en'?'/en/?lang=en':'/?lang=ru'?>"><?=h(t('Вернуться на главную →'))?></a>
+<?php else: ?><?php if($page==='profile'): ?><h2 class="eyebrow"><?=h(t('ЛИЧНЫЙ КАБИНЕТ'))?></h2><?php else: ?><div class="eyebrow"><?=h(t('ЛИЧНЫЙ КАБИНЕТ'))?></div><h2><?=h($titles[$page])?></h2><?php endif; ?>
+<?php if(isset($_SESSION['flash'])): ?><p class="notice" role="status"><?=h(t($_SESSION['flash']))?></p><?php unset($_SESSION['flash']); endif; ?>
+<?php if($error): ?><p class="error" role="alert"><?=h(t($error))?></p><?php endif; ?>
 <?php if($auctionWarning??''): ?><p class="error"><?=h($auctionWarning)?></p><?php endif; ?>
 <?php if($page==='announcements'): ?>
-<?php try { require __DIR__.'/announcements_view.php'; } catch(AuthError $e){echo '<p class="error">'.h($e->getMessage()).'</p>';} catch(Throwable $e){error_log('DKP announcements: '.get_class($e));echo '<p class="error">Не удалось загрузить объявления. Проверь установку обновления базы.</p>';} ?>
+<?php try { require __DIR__.'/announcements_view.php'; } catch(AuthError $e){echo '<p class="error">'.h(t($e->getMessage())).'</p>';} catch(Throwable $e){error_log('DKP announcements: '.get_class($e));echo ('<p class="error">'.h(t('Не удалось загрузить объявления. Проверь установку обновления базы.')).'</p>');} ?>
 <?php elseif($page==='auctions'): ?>
-<?php try { require __DIR__.'/auctions_view.php'; } catch(AuthError $e){echo '<p class="error">'.h($e->getMessage()).'</p>';} catch(Throwable $e){error_log('DKP auctions: '.get_class($e).' code='.$e->getCode());echo '<p class="error">Не удалось загрузить аукционы. Сообщи администратору.</p>';} ?>
+<?php try { require __DIR__.'/auctions_view.php'; } catch(AuthError $e){echo '<p class="error">'.h(t($e->getMessage())).'</p>';} catch(Throwable $e){error_log('DKP auctions: '.get_class($e).' code='.$e->getCode());echo ('<p class="error">'.h(t('Не удалось загрузить аукционы. Сообщи администратору.')).'</p>');} ?>
 <?php elseif($page==='events'): ?>
-<?php try { require __DIR__.'/events_view.php'; } catch(AuthError $e) { echo '<p class="error">'.h($e->getMessage()).'</p>'; } catch(Throwable $e) { error_log('DKP events: '.get_class($e).' code='.$e->getCode()); echo '<p class="error">События недоступны. Проверь установку обновления базы.</p>'; } ?>
+<?php try { require __DIR__.'/events_view.php'; } catch(AuthError $e) { echo '<p class="error">'.h(t($e->getMessage())).'</p>'; } catch(Throwable $e) { error_log('DKP events: '.get_class($e).' code='.$e->getCode()); echo ('<p class="error">'.h(t('События недоступны. Проверь установку обновления базы.')).'</p>'); } ?>
 <?php elseif($page==='manage'): ?>
-<?php try { require __DIR__.'/manage_view.php'; } catch(Throwable $e) { error_log('DKP management: '.get_class($e).' code='.$e->getCode()); echo '<p class="error">Панель недоступна. Проверь установку обновления базы.</p>'; } ?>
+<?php try { require __DIR__.'/manage_view.php'; } catch(Throwable $e) { error_log('DKP management: '.get_class($e).' code='.$e->getCode()); echo ('<p class="error">'.h(t('Панель недоступна. Проверь установку обновления базы.')).'</p>'); } ?>
 <?php elseif($page==='profile'): ?>
 <?php require __DIR__.'/profile_overview.php'; ?>
-<?php if($auth->query("SELECT web_user_id FROM fc_registration_members WHERE web_user_id=? AND status='conflict'",[$user['id']])->fetchColumn() && !$auth->query('SELECT member_id FROM fc_web_links WHERE web_user_id=?',[$user['id']])->fetchColumn()): ?><p role="status">Email подтверждён, но такой игровой ник уже есть в составе. Новый профиль не создан. Попроси администратора проверить и привязать твой аккаунт.</p><?php endif; ?>
+<?php if($auth->query("SELECT web_user_id FROM fc_registration_members WHERE web_user_id=? AND status='conflict'",[$user['id']])->fetchColumn() && !$auth->query('SELECT member_id FROM fc_web_links WHERE web_user_id=?',[$user['id']])->fetchColumn()): ?><p role="status"><?=h(t('Email подтверждён, но такой игровой ник уже есть в составе. Новый профиль не создан. Попроси администратора проверить и привязать твой аккаунт.'))?></p><?php endif; ?>
 <?php require __DIR__.'/migration_view.php'; ?>
 <?php require __DIR__.'/telegram_profile.php'; ?>
-<details><summary>Изменить игровой ник</summary><?php formStart('nickname'); field('nickname','Новый ник','text','nickname'); ?><button>Сохранить ник</button></form></details>
-<details><summary>Изменить пароль</summary><?php formStart('password'); field('old_password','Текущий пароль','password','current-password'); field('password','Новый пароль · от 12 символов','password','new-password'); ?><button>Изменить пароль</button></form></details>
-<?php formStart('logout'); ?><button class="secondary">Выйти</button></form>
+<details><summary><?=h(t('Изменить игровой ник'))?></summary><?php formStart('nickname'); field('nickname',t('Новый ник'),'text','nickname'); ?><button><?=h(t('Сохранить ник'))?></button></form></details>
+<details><summary><?=h(t('Изменить пароль'))?></summary><?php formStart('password'); field('old_password',t('Текущий пароль'),'password','current-password'); field('password',t('Новый пароль · от 12 символов'),'password','new-password'); ?><button><?=h(t('Изменить пароль'))?></button></form></details>
+<?php formStart('logout'); ?><button class="secondary"><?=h(t('Выйти'))?></button></form>
 <?php else:
 formStart($page);
 if(in_array($page,['login','register','forgot','resend'],true)) field('email','Email','email','email');
 if($page==='register') {
-    field('nickname','Игровой ник','text','nickname');
-    echo '<label class="check"><input type="checkbox" name="new_member" value="1"'.(($_POST['new_member']??'')==='1'?' checked':'').'> Новый участник гильдии</label><small>После подтверждения email создадим и привяжем профиль ДКП с этим ником и нулевым балансом. Если ты уже есть в составе, оставь галочку пустой и попроси администратора привязать аккаунт.</small>';
+    field('nickname',t('Игровой ник'),'text','nickname');
+    echo '<label class="check"><input type="checkbox" name="new_member" value="1"'.(($_POST['new_member']??'')==='1'?' checked':'').('>'.h(t(' Новый участник гильдии')).'</label>'.'<small>'.h(t('После подтверждения email создадим и привяжем профиль ДКП с этим ником и нулевым балансом. Если ты уже есть в составе, оставь галочку пустой и попроси администратора привязать аккаунт.')).'</small>');
 }
-if(in_array($page,['login','register','verify','reset'],true)) field('password',in_array($page,['register','reset'],true)?'Пароль · от 12 символов':'Пароль','password',in_array($page,['register','reset'],true)?'new-password':'current-password');
-$buttons=['login'=>'Войти в кабинет','register'=>'Зарегистрироваться','forgot'=>'Отправить ссылку','resend'=>'Отправить письмо','verify'=>'Подтвердить email','reset'=>'Сохранить новый пароль']; ?>
+if(in_array($page,['login','register','verify','reset'],true)) field('password',in_array($page,['register','reset'],true)?t('Пароль · от 12 символов'):t('Пароль'),'password',in_array($page,['register','reset'],true)?'new-password':'current-password');
+$buttons=['login'=>t('Войти в кабинет'),'register'=>t('Зарегистрироваться'),'forgot'=>t('Отправить ссылку'),'resend'=>t('Отправить письмо'),'verify'=>t('Подтвердить email'),'reset'=>t('Сохранить новый пароль')]; ?>
 <button><?=h($buttons[$page])?> <span>→</span></button></form>
-<?php if($page==='login'): ?><nav><a href="?page=forgot">Забыл пароль?</a><a href="?page=resend">Повторить письмо</a></nav><p class="foot">Ещё нет аккаунта? <a href="?page=register">Регистрация</a></p>
-<?php else: ?><p class="foot"><a href="?page=login">← Вернуться ко входу</a></p><?php endif; ?>
-<?php if($page==='register'): ?><small>Потребуется подтвердить email. Используй отдельный пароль для сайта.</small><?php endif; ?>
+<?php if($page==='login'): ?><nav><a href="?page=forgot"><?=h(t('Забыл пароль?'))?></a><a href="?page=resend"><?=h(t('Повторить письмо'))?></a></nav><p class="foot"><?=h(t('Ещё нет аккаунта? '))?><a href="?page=register"><?=h(t('Регистрация'))?></a></p>
+<?php else: ?><p class="foot"><a href="?page=login"><?=h(t('← Вернуться ко входу'))?></a></p><?php endif; ?>
+<?php if($page==='register'): ?><small><?=h(t('Потребуется подтвердить email. Используй отдельный пароль для сайта.'))?></small><?php endif; ?>
 <?php endif; endif; ?>
-</section></main><footer>FC · TrustTheGame <span>Таверна открыта</span></footer></body></html>
+</section></main><footer>FC · TrustTheGame <span><?=h(t('Таверна открыта'))?></span></footer></body></html>

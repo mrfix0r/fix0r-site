@@ -3,6 +3,7 @@
   'use strict';
   const key = 'fc-site-theme';
   const root = document.documentElement;
+  const english = root.lang === 'en';
   const valid = value => value === 'forest' ? 'forest' : 'tavern';
   let theme = 'tavern';
   try { theme = valid(localStorage.getItem(key)); } catch (_) { /* Private storage may be unavailable. */ }
@@ -13,9 +14,9 @@
     document.querySelectorAll('[data-theme-toggle]').forEach(button => {
       const forest = theme === 'forest';
       button.setAttribute('aria-pressed', String(forest));
-      button.setAttribute('aria-label', 'Тема «Лес и крем»');
-      button.title = forest ? 'Включить тему «Сумеречный лес»' : 'Включить тему «Лес и крем»';
-      button.querySelector('[data-theme-label]').textContent = forest ? 'Лес и крем' : 'Сумеречный лес';
+      button.setAttribute('aria-label', english ? 'Forest & Cream theme' : 'Тема «Лес и крем»');
+      button.title = english ? (forest ? 'Switch to Twilight Forest' : 'Switch to Forest & Cream') : (forest ? 'Включить тему «Сумеречный лес»' : 'Включить тему «Лес и крем»');
+      button.querySelector('[data-theme-label]').textContent = english ? (forest ? 'Forest & Cream' : 'Twilight Forest') : (forest ? 'Лес и крем' : 'Сумеречный лес');
       button.hidden = false;
     });
   }

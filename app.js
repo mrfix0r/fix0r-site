@@ -27,10 +27,11 @@ tabs.forEach((tab, index) => {
 });
 
 const lantern = document.querySelector('.lantern-switch');
+const english = document.documentElement.lang === 'en';
 lantern.addEventListener('click', () => {
   const on = lantern.getAttribute('aria-pressed') !== 'true';
   lantern.setAttribute('aria-pressed', String(on));
-  lantern.setAttribute('aria-label', on ? 'Выключить свет фонаря' : 'Включить свет фонаря');
+  lantern.setAttribute('aria-label', english ? (on ? 'Turn off the lantern' : 'Turn on the lantern') : (on ? 'Выключить свет фонаря' : 'Включить свет фонаря'));
   document.querySelector('.hero-art').classList.toggle('lantern-on', on);
-  document.querySelector('#lantern-label').textContent = on ? 'Фонарь горит' : 'Зажечь фонарь';
+  document.querySelector('#lantern-label').textContent = english ? (on ? 'Lantern is lit' : 'Light the lantern') : (on ? 'Фонарь горит' : 'Зажечь фонарь');
 });

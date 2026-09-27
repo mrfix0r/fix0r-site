@@ -21,17 +21,17 @@ final class ScheduledEvents {
     }
 
     public function setEnabled(int $actor,int $version,string $enabled,string $revision,?int $now=null): void {
-        if (!in_array($enabled,['0','1'],true) || !preg_match('/^[1-9][0-9]{0,9}$/D',$revision)) throw new AuthError('Обнови страницу и повтори действие.');
+        if (!in_array($enabled,['0','1'],true) || !preg_match('/^[1-9][0-9]{0,9}$/D',$revision)) throw new AuthError(t('Обнови страницу и повтори действие.'));
         $db=$this->auth->db;
         if ($db->inTransaction()) throw new RuntimeException('Schedule settings require their own transaction');
         $db->beginTransaction();
         try {
             if ($this->auth->query('UPDATE fc_write_lock SET revision=revision+1 WHERE id=1')->rowCount()!==1) throw new RuntimeException('Missing write lock');
             $u=$this->auth->query('SELECT role,verified_at,session_version FROM dkp_users WHERE id=?',[$actor])->fetch();
-            if (!$u || !$u['verified_at'] || (int)$u['session_version']!==$version || !in_array($u['role'],['admin','officer'],true)) throw new AuthError('Это действие доступно только офицеру или администратору.');
+            if (!$u || !$u['verified_at'] || (int)$u['session_version']!==$version || !in_array($u['role'],['admin','officer'],true)) throw new AuthError(t('Это действие доступно только офицеру или администратору.'));
             $state=$this->state();
-            if ($state['revision']!==(int)$revision) throw new AuthError('Настройка уже изменена. Обнови страницу.');
-            if ($enabled==='1' && !$state['configured']) throw new AuthError('Автосоздание отключено в cw_schedule.php. Обратись к администратору.');
+            if ($state['revision']!==(int)$revision) throw new AuthError(t('Настройка уже изменена. Обнови страницу.'));
+            if ($enabled==='1' && !$state['configured']) throw new AuthError(t('Автосоздание отключено в cw_schedule.php. Обратись к администратору.'));
             if ($state['enabled']===($enabled==='1')) { $db->commit();return; }
             $now ??= time();
             // On resume, skip every slot whose scheduled time has already passed.
