@@ -60,7 +60,7 @@ try {
     $ready=true;
 } catch(Throwable $e) { http_response_code(503); error_log('DKP initialization: '.get_class($e).' code='.$e->getCode().' driver='.($e instanceof PDOException ? ($e->errorInfo[1] ?? 'unknown') : 'n/a')); }
 $page=is_string($_GET['page']??null)?$_GET['page']:($user?'profile':'login');
-if (!in_array($page,['login','register','forgot','resend','verify','reset','profile','manage','events','auctions','announcements'],true)) $page='login';
+if (!in_array($page,['login','register','forgot','resend','verify','reset','profile','manage','events','auctions','announcements','metrics'],true)) $page='login';
 if ($ready && isset($_GET['token']) && in_array($page,['verify','reset'],true)) {
     $token=$_GET['token'];
     if (is_string($token) && preg_match('/^[a-f0-9]{64}$/D',$token)) $_SESSION[$page.'_token']=$token;
@@ -162,20 +162,26 @@ if ($ready && $_SERVER['REQUEST_METHOD']==='POST') {
 }
 if ($ready && in_array($page,['profile','auctions','events','announcements'],true) && !$user) go('login');
 if ($ready && $page==='manage' && (!$user || !in_array($user['role'],['admin','officer'],true))) go('profile');
-$titles=['announcements'=>t('Объявления'),'auctions'=>t('Аукционы гильдии'),'events'=>t('События гильдии'),'manage'=>t('Управление ДКП'),'login'=>t('С возвращением'),'register'=>t('Присоединяйся к гильдии'),'forgot'=>t('Забыл пароль?'),'resend'=>t('Подтвердим почту'),'verify'=>t('Подтверждение email'),'reset'=>t('Новый пароль'),'profile'=>t('Личный кабинет')];
+if ($ready && $page==='metrics') {
+    if (!$user) go('login');
+    if ($user['role']!=='admin') {http_response_code(403);exit(t('Доступ только для администратора.'));}
+}
+$titles=['metrics'=>t('Статистика сайта'),'announcements'=>t('Объявления'),'auctions'=>t('Аукционы гильдии'),'events'=>t('События гильдии'),'manage'=>t('Управление ДКП'),'login'=>t('С возвращением'),'register'=>t('Присоединяйся к гильдии'),'forgot'=>t('Забыл пароль?'),'resend'=>t('Подтвердим почту'),'verify'=>t('Подтверждение email'),'reset'=>t('Новый пароль'),'profile'=>t('Личный кабинет')];
 function dkpForm(string $kind):void { formStart('dkp_'.$kind);echo '<input type="hidden" name="request_key" value="'.bin2hex(random_bytes(32)).'">'; }
 function formStart(string $action):void { echo '<form method="post"><input type="hidden" name="csrf" value="'.h($_SESSION['csrf']).'"><input type="hidden" name="action" value="'.h($action).'">'; }
 ?>
-<!doctype html><html lang="<?=fc_language()?>"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title><?=h($titles[$page])?> · FC DKP</title><link rel="icon" href="/favicon.svg"><script src="/language.js?v=1"></script><script src="/theme.js?v=3"></script><link rel="stylesheet" href="/dkp/style.css?v=4.6.1"><link rel="stylesheet" href="/theme.css?v=4"><link rel="stylesheet" href="/language.css?v=1"></head><body class="dkp-app">
+<!doctype html><html lang="<?=fc_language()?>"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title><?=h($titles[$page])?> · FC DKP</title><link rel="icon" href="/favicon.svg"><script src="/language.js?v=1"></script><script src="/theme.js?v=3"></script><link rel="stylesheet" href="/dkp/style.css?v=4.6.1"><link rel="stylesheet" href="/theme.css?v=4"><link rel="stylesheet" href="/language.css?v=1"><?php if($page==='metrics'): ?><link rel="stylesheet" href="/metrics.css?v=1"><?php endif; ?><script src="/metrics.js?v=1" defer></script></head><body class="dkp-app" data-metrics-page="<?=h($ready && !in_array($page,['verify','reset','metrics'],true)?'dkp.'.$page:'')?>">
 <header><a class="brand" href="<?=fc_language()==='en'?'/en/?lang=en':'/?lang=ru'?>">FC <span>TrustTheGame</span></a><div class="header-tools"><?php fc_language_switch(); ?><button class="theme-toggle" type="button" data-theme-toggle aria-label="<?=h(t('Тема «Лес и крем»'))?>" aria-pressed="false" hidden><span class="theme-swatch" aria-hidden="true"></span><span data-theme-label><?=h(t('Сумеречный лес'))?></span></button><a href="<?=fc_language()==='en'?'/en/?lang=en':'/?lang=ru'?>"><?=h(t('← На главную'))?></a></div></header>
-<main<?= in_array($page,['manage','events','auctions','announcements'],true)?' class="management"':'' ?>><aside><div class="eyebrow">SLEEPINGFOREST / RF ONLINE</div><h1><?=h(t('Сила гильдии —'))?><br><?=h(t('в каждом из нас.'))?></h1><p><?=h(t('Место для твоего игрового профиля.'))?><br><?=h(t('Вход через собственный аккаунт сайта.'))?></p><div class="crest">FC</div><small><?=h(t('Собираемся вместе. Играем на доверии.'))?></small></aside>
+<main<?= in_array($page,['manage','events','auctions','announcements','metrics'],true)?' class="management"':'' ?>><aside><div class="eyebrow">SLEEPINGFOREST / RF ONLINE</div><h1><?=h(t('Сила гильдии —'))?><br><?=h(t('в каждом из нас.'))?></h1><p><?=h(t('Место для твоего игрового профиля.'))?><br><?=h(t('Вход через собственный аккаунт сайта.'))?></p><div class="crest">FC</div><small><?=h(t('Собираемся вместе. Играем на доверии.'))?></small></aside>
 <section class="card">
 <?php if (!$ready): ?><div class="eyebrow">FC DKP</div><h2><?=h(t('Кабинет готовится к открытию'))?></h2><p><?=h(t('Администратору нужно завершить настройку сервера. Попробуй зайти позже.'))?></p><a href="<?=fc_language()==='en'?'/en/?lang=en':'/?lang=ru'?>"><?=h(t('Вернуться на главную →'))?></a>
 <?php else: ?><?php if($page==='profile'): ?><h2 class="eyebrow"><?=h(t('ЛИЧНЫЙ КАБИНЕТ'))?></h2><?php else: ?><div class="eyebrow"><?=h(t('ЛИЧНЫЙ КАБИНЕТ'))?></div><h2><?=h($titles[$page])?></h2><?php endif; ?>
 <?php if(isset($_SESSION['flash'])): ?><p class="notice" role="status"><?=h(t($_SESSION['flash']))?></p><?php unset($_SESSION['flash']); endif; ?>
 <?php if($error): ?><p class="error" role="alert"><?=h(t($error))?></p><?php endif; ?>
 <?php if($auctionWarning??''): ?><p class="error"><?=h($auctionWarning)?></p><?php endif; ?>
-<?php if($page==='announcements'): ?>
+<?php if($page==='metrics'): ?>
+<?php require __DIR__.'/metrics_view.php'; ?>
+<?php elseif($page==='announcements'): ?>
 <?php try { require __DIR__.'/announcements_view.php'; } catch(AuthError $e){echo '<p class="error">'.h(t($e->getMessage())).'</p>';} catch(Throwable $e){error_log('DKP announcements: '.get_class($e));echo ('<p class="error">'.h(t('Не удалось загрузить объявления. Проверь установку обновления базы.')).'</p>');} ?>
 <?php elseif($page==='auctions'): ?>
 <?php try { require __DIR__.'/auctions_view.php'; } catch(AuthError $e){echo '<p class="error">'.h(t($e->getMessage())).'</p>';} catch(Throwable $e){error_log('DKP auctions: '.get_class($e).' code='.$e->getCode());echo ('<p class="error">'.h(t('Не удалось загрузить аукционы. Сообщи администратору.')).'</p>');} ?>
