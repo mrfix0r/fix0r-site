@@ -24,7 +24,7 @@ function t(string $source): string {
 
 function fc_language_url(string $language): string {
     $query = [];
-    foreach (['page','event','auction','announcement','ep','ap','bp','hp','p','sort','direction'] as $key) {
+    foreach (['page','event','auction','announcement','ep','ap','bp','hp','p','sort','direction','days'] as $key) {
         if (isset($_GET[$key]) && is_string($_GET[$key])) $query[$key] = $_GET[$key];
     }
     $query['lang'] = $language === 'en' ? 'en' : 'ru';

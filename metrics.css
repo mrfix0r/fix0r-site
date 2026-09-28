@@ -1,0 +1,20 @@
+.metrics-filter { display:flex; flex-wrap:wrap; gap:16px; align-items:end; margin-bottom:12px; }
+.metrics-filter label { margin:0; flex:1 1 160px; }
+.metrics-filter button { width:auto; min-width:130px; margin:0; }
+.metrics-summary { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; margin:24px 0; }
+.metrics-summary>div { padding:20px; background:#17111f; border:1px solid #554160; border-radius:12px; }
+.metrics-summary span,.metrics-summary small { display:block; }
+.metrics-summary strong { display:block; font-size:32px; line-height:1.4; margin:8px 0; }
+.metrics-note { font-size:13px; }
+.metrics-preferences { margin:24px 0 32px; }
+.metrics-preferences button { width:auto; margin:0 0 8px; }
+.metrics-preferences small { display:block; }
+.dkp-app [hidden] { display:none!important; }
+.metrics-table { width:100%; }
+.metrics-table td:last-child { font-variant-numeric:tabular-nums; }
+.metrics-volume { display:flex; align-items:center; gap:12px; }
+.metrics-volume meter { width:90px; height:12px; accent-color:#c5acdd; }
+.metrics-volume meter::-webkit-meter-optimum-value { background:#a58bbd; }
+[data-theme="forest"] .metrics-summary>div { background:#f2e2cb; border-color:#c2bba3; }
+[data-theme="forest"] .metrics-volume meter::-webkit-meter-optimum-value { background:#567459; }
+@media(max-width:600px) { .metrics-summary { grid-template-columns:1fr; } .metrics-summary>div { padding:16px; } .metrics-volume meter { width:45px; } }

@@ -13,6 +13,7 @@ $roleName=['member'=>t('Участник'),'officer'=>t('Офицер'),'admin'=
   <a class="profile-button profile-button-primary" href="?page=events"><?=h(t('События '))?><span aria-hidden="true">→</span></a>
   <a class="profile-button" href="?page=auctions"><?=h(t('Аукционы гильдии '))?><span aria-hidden="true">→</span></a>
   <?php if(in_array($user['role'],['admin','officer'],true)): ?><a class="profile-button profile-button-manage" href="?page=manage"><?=h(t('Управление ДКП '))?><span aria-hidden="true">→</span></a><?php endif; ?>
+  <?php if($user['role']==='admin'): ?><a class="profile-button" href="?page=metrics"><?=h(t('Статистика сайта'))?> <span aria-hidden="true">→</span></a><?php endif; ?>
 </nav>
 <?php require __DIR__.'/announcement_banner.php'; ?>
 <div class="profile-slider" role="group" aria-label="<?=h(t('Ближайшее событие и аукцион'))?>">
