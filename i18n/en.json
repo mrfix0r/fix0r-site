@@ -692,5 +692,9 @@
   "За выбранный период событий нет.": "No events in the selected period.",
   "Один человек с разных устройств или после очистки хранилища может считаться несколькими посетителями. Идентификатор браузера обновляется через 30 дней.": "One person using several devices or clearing browser storage may count as multiple visitors. The browser identifier renews after 30 days.",
   "Счётчики показывают нажатия, а не успешные подписки или операции ДКП. Блокировщики, выключенный JavaScript и настройки приватности могут уменьшать числа.": "Counters measure clicks, not successful follows or DKP operations. Blockers, disabled JavaScript and privacy settings may reduce the numbers.",
-  "Дата": "Date"
+  "Дата": "Date",
+  "ПОДДЕРЖКА": "SUPPORT",
+  "Вишлист": "Wishlist",
+  "Открыть вишлист": "Open wishlist",
+  "Идеи для подарков": "Gift ideas"
 }

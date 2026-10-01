@@ -91,7 +91,7 @@ h2, .section-title h2, .code-card h2, .explore-header h2 {
 .specs, .full-setup { font-size: 14px; line-height: 1.65; }
 .specs > div { padding: 9px 0; }
 .specs dd { overflow-wrap: anywhere; }
-.places { grid-template-columns: 1.1fr 1fr 1fr 1fr; gap: 20px; }
+.places { grid-template-columns: 1.1fr repeat(4, minmax(0, 1fr)); gap: 20px; }
 .places-label { font-size: 11px; letter-spacing: .08em; }
 .place strong { font-size: 18px; }
 .place small { font-size: 12px; line-height: 1.65; }
@@ -110,7 +110,7 @@ h2, .section-title h2, .code-card h2, .explore-header h2 {
   .navigator { grid-template-columns: .9fr 1.3fr; }
   .interest { padding: 17px 14px; gap: 12px; }
   .interest-panel { padding: 27px; }
-  .places { grid-template-columns: repeat(3, 1fr); gap: 20px; padding: 24px 0; }
+  .places { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; padding: 24px 0; }
   .places-label { grid-column: 1 / -1; }
   .places > .place:nth-child(2) { border-left: 0; padding-left: 0; }
 }

@@ -91,7 +91,7 @@
     if (!el.matches('a[href]')) return null;
     let url; try { url = new URL(el.getAttribute('href'), location.href); } catch (_) { return null; }
     if (url.protocol === 'ts3server:' && url.hostname === 'sleepingforest.cleanvoice.ru') return 'out.teamspeak';
-    const external = { 't.me/fix0rstream':'telegram', 'www.twitch.tv/fix0r':'twitch', 'twitch.tv/fix0r':'twitch', 'discord.gg/shpfugy2jz':'discord', 'boosty.to/fix0r':'boosty' };
+    const external = { 't.me/fix0rstream':'telegram', 'www.twitch.tv/fix0r':'twitch', 'twitch.tv/fix0r':'twitch', 'discord.gg/shpfugy2jz':'discord', 'boosty.to/fix0r':'boosty', 'followish.io/app/wishlists/phyn38iezvdkqs':'wishlist' };
     const destination = external[(url.hostname + url.pathname.replace(/\/$/, '')).toLowerCase()];
     if (url.protocol === 'https:' && destination) return 'out.' + destination;
     if (url.origin !== location.origin) return null;
