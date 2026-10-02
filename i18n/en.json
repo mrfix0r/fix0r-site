@@ -696,5 +696,8 @@
   "ПОДДЕРЖКА": "SUPPORT",
   "Вишлист": "Wishlist",
   "Открыть вишлист": "Open wishlist",
-  "Идеи для подарков": "Gift ideas"
+  "Идеи для подарков": "Gift ideas",
+  "Данные аккаунта изменились. Войди заново.": "Your account has changed. Sign in again.",
+  "Запомнить меня на 30 дней": "Remember me for 30 days",
+  "На чужом или общем устройстве сними галочку.": "Uncheck this on a shared device or someone else’s device."
 }
