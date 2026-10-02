@@ -14,6 +14,7 @@ if(!in_array($method,['GET','HEAD','POST'],true)){http_response_code(405);header
 if((int)($_SERVER['CONTENT_LENGTH']??0)>32768){http_response_code(413);exit(t('Слишком большой запрос.'));}
 if($method==='POST')foreach($_POST as $value)if(!is_string($value)){http_response_code(400);exit(t('Некорректный запрос.'));}
 require __DIR__.'/auth.php';
+require __DIR__.'/remember_login.php';
 require __DIR__.'/dkp_store.php';
 require __DIR__.'/announcements_store.php';
 require __DIR__.'/telegram_store.php';
@@ -21,6 +22,14 @@ function h(string $s): string { return htmlspecialchars($s, ENT_QUOTES|ENT_SUBST
 function go(string $page, string $message=''): never { if ($message) $_SESSION['flash']=$message; header('Location: /dkp/?page='.$page.'&lang='.fc_language(), true, 303); exit; }
 function field(string $name,string $label,string $type='text',string $auto=''): void {
     echo '<label>'.h($label).'<input name="'.h($name).'" type="'.h($type).'" required maxlength="'.($type==='password'?'128':'254').'" autocomplete="'.h($auto).'"'.($type==='password'?' minlength="12"':'').'></label>';
+}
+function fc_login_session(array $user, ?string $rememberHash=null): void {
+    session_regenerate_id(true);
+    $_SESSION=['uid'=>(int)$user['id'],'version'=>(int)$user['session_version'],'born'=>time(),'last'=>time(),'csrf'=>bin2hex(random_bytes(32))];
+    if ($rememberHash !== null) $_SESSION['remember_hash']=$rememberHash;
+}
+function fc_clear_login_session(): void {
+    $_SESSION=[]; session_regenerate_id(true); $_SESSION['csrf']=bin2hex(random_bytes(32));
 }
 $ready=false; $error=''; $user=false;
 try {
@@ -46,11 +55,25 @@ try {
     session_name('FC_DKP'); session_set_cookie_params(['lifetime'=>0,'path'=>'/dkp','secure'=>true,'httponly'=>true,'samesite'=>'Lax']); session_start();
     $_SESSION['csrf']??=bin2hex(random_bytes(32));
     $auth->query('SELECT id FROM dkp_users LIMIT 1');
+    $remember=new RememberLogin($auth);
     if (isset($_SESSION['uid'])) {
         $user=$auth->user((int)$_SESSION['uid']);
-        if (!$user || !$user['verified_at'] || (int)$user['session_version']!==($_SESSION['version']??0) || time()-($_SESSION['last']??0)>3600 || time()-($_SESSION['born']??0)>43200) {
-            unset($_SESSION['uid'],$_SESSION['version']); $user=false;
+        $valid=$user && $user['verified_at'] && (int)$user['session_version']===($_SESSION['version']??0);
+        if ($valid && isset($_SESSION['remember_hash'])) {
+            $grant=$remember->byHash($_SESSION['remember_hash']);
+            $valid=$grant && (int)$grant['user']['id']===(int)$user['id'];
+        }
+        if (!$valid) {
+            RememberLogin::cookie(null); fc_clear_login_session(); $user=false;
+        } elseif (time()-($_SESSION['last']??0)>3600 || time()-($_SESSION['born']??0)>43200) {
+            fc_clear_login_session(); $user=false;
         } else $_SESSION['last']=time();
+    }
+    if (!$user && isset($_COOKIE[RememberLogin::COOKIE])) {
+        $grant=$remember->fromCookie($_COOKIE[RememberLogin::COOKIE]);
+        if ($grant) {
+            $user=$grant['user']; fc_login_session($user,$grant['hash']);
+        } else RememberLogin::cookie(null);
     }
     $dkp=new DKP($auth);$announcements=new Announcements($auth);
     $tgConfig=is_file(__DIR__.'/telegram_config.php')?require __DIR__.'/telegram_config.php':[];
@@ -146,20 +169,32 @@ if ($ready && $_SERVER['REQUEST_METHOD']==='POST') {
             case 'login':
                 $auth->rate('login-ip:'.($_SERVER['REMOTE_ADDR']??''),20);
                 $auth->rate('login:'.Auth::email($email),10); $u=$auth->login($email,$password);
-                session_regenerate_id(true); $_SESSION=['uid'=>(int)$u['id'],'version'=>(int)$u['session_version'],'born'=>time(),'last'=>time(),'csrf'=>bin2hex(random_bytes(32))]; go('profile');
-            case 'logout': $_SESSION=[]; session_regenerate_id(true); $_SESSION['csrf']=bin2hex(random_bytes(32)); go('login',t('Ты вышел из кабинета.'));
+                if (($_POST['remember']??'')==='1') {
+                    $ticket=$remember->issue($u,$_COOKIE[RememberLogin::COOKIE]??null,$_SESSION['remember_hash']??null);
+                    RememberLogin::cookie($ticket); fc_login_session($u,$ticket['hash']);
+                } else {
+                    $remember->revokeCookie($_COOKIE[RememberLogin::COOKIE]??null);
+                    $remember->revokeHash($_SESSION['remember_hash']??null);
+                    RememberLogin::cookie(null); fc_login_session($u);
+                }
+                go('profile');
+            case 'logout':
+                $remember->revokeCookie($_COOKIE[RememberLogin::COOKIE]??null);
+                $remember->revokeHash($_SESSION['remember_hash']??null);
+                RememberLogin::cookie(null); fc_clear_login_session(); go('login',t('Ты вышел из кабинета.'));
             case 'nickname':
                 if (!$user) throw new AuthError(t('Войди в кабинет.'));
                 $nick=trim($_POST['nickname']??''); if (!preg_match('/^[^\p{C}]{1,32}$/u',$nick)) throw new AuthError(t('Ник должен содержать от 1 до 32 символов.'));
                 $auth->query('UPDATE dkp_users SET nickname=? WHERE id=?',[$nick,$user['id']]); go('profile',t('Игровой ник изменён.'));
             case 'password':
                 if (!$user) throw new AuthError(t('Войди в кабинет.'));
-                $auth->changePassword((int)$user['id'],$_POST['old_password']??'',$password); $_SESSION=[]; session_regenerate_id(true); $_SESSION['csrf']=bin2hex(random_bytes(32)); go('login',t('Пароль изменён. Все сеансы завершены. Войди заново.'));
+                $auth->changePassword((int)$user['id'],$_POST['old_password']??'',$password); RememberLogin::cookie(null); fc_clear_login_session(); go('login',t('Пароль изменён. Все сеансы завершены. Войди заново.'));
             default: throw new AuthError(t('Неизвестное действие.'));
         }
     } catch(AuthError $e) { $error=$e->getMessage(); http_response_code(400); }
     catch(Throwable $e) { $error=t('Не удалось выполнить действие. Попробуй позже.'); http_response_code(503); error_log('DKP request: '.get_class($e)); }
 }
+if ($ready && $user && $page==='login' && $method==='GET') go('profile');
 if ($ready && in_array($page,['profile','auctions','events','announcements'],true) && !$user) go('login');
 if ($ready && $page==='manage' && (!$user || !in_array($user['role'],['admin','officer'],true))) go('profile');
 if ($ready && $page==='metrics') {
@@ -205,6 +240,10 @@ if($page==='register') {
     echo '<label class="check"><input type="checkbox" name="new_member" value="1"'.(($_POST['new_member']??'')==='1'?' checked':'').('>'.h(t(' Новый участник гильдии')).'</label>'.'<small>'.h(t('После подтверждения email создадим и привяжем профиль ДКП с этим ником и нулевым балансом. Если ты уже есть в составе, оставь галочку пустой и попроси администратора привязать аккаунт.')).'</small>');
 }
 if(in_array($page,['login','register','verify','reset'],true)) field('password',in_array($page,['register','reset'],true)?t('Пароль · от 12 символов'):t('Пароль'),'password',in_array($page,['register','reset'],true)?'new-password':'current-password');
+if($page==='login') {
+    $checked=$method!=='POST' || ($_POST['remember']??'')==='1';
+    echo '<label class="check"><input type="checkbox" name="remember" value="1"'.($checked?' checked':'').'>'.h(t('Запомнить меня на 30 дней')).'</label><small>'.h(t('На чужом или общем устройстве сними галочку.')).'</small>';
+}
 $buttons=['login'=>t('Войти в кабинет'),'register'=>t('Зарегистрироваться'),'forgot'=>t('Отправить ссылку'),'resend'=>t('Отправить письмо'),'verify'=>t('Подтвердить email'),'reset'=>t('Сохранить новый пароль')]; ?>
 <button><?=h($buttons[$page])?> <span>→</span></button></form>
 <?php if($page==='login'): ?><nav><a href="?page=forgot"><?=h(t('Забыл пароль?'))?></a><a href="?page=resend"><?=h(t('Повторить письмо'))?></a></nav><p class="foot"><?=h(t('Ещё нет аккаунта? '))?><a href="?page=register"><?=h(t('Регистрация'))?></a></p>
