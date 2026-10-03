@@ -73,7 +73,7 @@
   }
   function areaOf(el) {
     if (document.body.classList.contains('dkp-app')) return 'dkp';
-    for (const [selector, area] of [['header','header'],['.telegram-notice','announcement'],['#home','hero'],['#twitch-stream','player'],['#about','about'],['#schedule','schedule'],['#panel-community','community'],['#panel-support','support'],['#explore','explore'],['footer','footer']]) {
+    for (const [selector, area] of [['header','header'],['.project-notice','announcement'],['.telegram-notice','announcement'],['#home','hero'],['#twitch-stream','player'],['#about','about'],['#schedule','schedule'],['#panel-community','community'],['#panel-support','support'],['#explore','explore'],['footer','footer']]) {
       if (el.closest(selector)) return area;
     }
     return null;
@@ -91,7 +91,7 @@
     if (!el.matches('a[href]')) return null;
     let url; try { url = new URL(el.getAttribute('href'), location.href); } catch (_) { return null; }
     if (url.protocol === 'ts3server:' && url.hostname === 'sleepingforest.cleanvoice.ru') return 'out.teamspeak';
-    const external = { 't.me/fix0rstream':'telegram', 'www.twitch.tv/fix0r':'twitch', 'twitch.tv/fix0r':'twitch', 'discord.gg/shpfugy2jz':'discord', 'boosty.to/fix0r':'boosty', 'followish.io/app/wishlists/phyn38iezvdkqs':'wishlist' };
+    const external = { 't.me/fix0rstream':'telegram', 'www.twitch.tv/fix0r':'twitch', 'twitch.tv/fix0r':'twitch', 'discord.gg/shpfugy2jz':'discord', 'boosty.to/fix0r':'boosty', 'followish.io/app/wishlists/phyn38iezvdkqs':'wishlist', 'cerberus-games.com/ads':'cerberus' };
     const destination = external[(url.hostname + url.pathname.replace(/\/$/, '')).toLowerCase()];
     if (url.protocol === 'https:' && destination) return 'out.' + destination;
     if (url.origin !== location.origin) return null;
