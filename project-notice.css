@@ -16,14 +16,17 @@
 .project-notice-kicker { margin:0 0 8px; color:#694817; font-size:11px; font-weight:700; letter-spacing:.13em; line-height:1.6; }
 .project-notice h2 { margin:0 0 10px; color:#342516; font-size:clamp(24px,2.5vw,34px); line-height:1.2; letter-spacing:-.025em; overflow-wrap:anywhere; }
 .project-notice-copy>p:last-child { max-width:650px; margin:0; color:#533c20; font-size:15px; line-height:1.7; }
-.project-notice .project-notice-action { background:#402c18; border:1px solid #62421e; border-radius:8px; color:#fff1cf; font-weight:700; gap:18px; white-space:nowrap; }
+.project-notice-actions { display:grid; gap:10px; max-width:300px; }
+.project-notice .project-notice-action { background:#402c18; border:1px solid #62421e; border-radius:8px; color:#fff1cf; font-weight:700; gap:12px; white-space:normal; text-align:center; }
 .project-notice .project-notice-action:hover { background:#563b1e; }
+.project-notice .project-notice-action-secondary { background:#fff2; color:#402c18; }
+.project-notice .project-notice-action-secondary:hover { background:#fff5; }
 .project-notice .project-notice-action:focus-visible { outline:3px solid #402c18; outline-offset:4px; }
 [data-theme="forest"] .site-home .project-notice-card { background:linear-gradient(115deg,#f6dda2,#e4be77 65%,#efd5a0); box-shadow:0 12px 32px #68451b14,inset 0 1px 0 #fff8; }
 @media(max-width:900px) {
   .project-notice-card { grid-template-columns:48px minmax(0,1fr); gap:18px; }
   .project-notice-mark { width:48px; height:48px; }
-  .project-notice-action { grid-column:1/-1; justify-self:start; }
+  .project-notice-actions { grid-column:1/-1; display:flex; flex-wrap:wrap; max-width:none; }
 }
 @media(max-width:600px) {
   .project-notice { padding-top:20px; }
@@ -31,5 +34,6 @@
   .project-notice-mark { display:none; }
   .project-notice-kicker { font-size:10px; letter-spacing:.1em; }
   .project-notice-copy>p:last-child { font-size:14px; }
+  .project-notice-actions { display:grid; }
   .project-notice .project-notice-action { width:100%; white-space:normal; font-size:14px; }
 }
