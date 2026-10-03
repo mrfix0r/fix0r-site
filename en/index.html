@@ -17,10 +17,11 @@
   <link rel="stylesheet" href="/twitch-player.css?v=1">
   <link rel="stylesheet" href="/stream-navigation.css?v=1">
   <link rel="stylesheet" href="/theme.css?v=4">
+  <link rel="stylesheet" href="/project-notice.css?v=2">
   <link rel="stylesheet" href="/about.css?v=1">
   <link rel="stylesheet" href="/language.css?v=1">
   <script src="/app.js?v=2" defer></script>
-  <script src="/metrics.js?v=2" defer></script>
+  <script src="/metrics.js?v=4" defer></script>
 </head>
 <body class="site-home" data-metrics-page="home">
   <a class="skip-link" href="#main">Skip to content</a>
@@ -39,7 +40,22 @@
     <div class="header-tools"><div class="language-switch" role="group" aria-label="Site language"><a href="/?lang=ru" data-language="ru" lang="ru" hreflang="ru" aria-label="Русский">RU</a><a href="/en/?lang=en" data-language="en" lang="en" hreflang="en" aria-label="English" aria-current="true">EN</a></div><span class="welcome-badge" aria-label="The tavern is open"><span class="welcome-dot" aria-hidden="true"></span>The tavern is open</span><button class="theme-toggle" type="button" data-theme-toggle aria-label="Forest &amp; Cream theme" aria-pressed="false" hidden><span class="theme-swatch" aria-hidden="true"></span><span data-theme-label>Twilight Forest</span></button></div>
   </header>
   <main id="main">
-    <section class="telegram-notice wrap" aria-labelledby="telegram-title">
+    <section id="cerberus-notice" class="project-notice wrap" aria-labelledby="cerberus-title">
+      <div class="project-notice-card">
+        <div class="project-notice-mark" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="m24 5 5 14 14 5-14 5-5 14-5-14L5 24l14-5Z"/><circle cx="24" cy="24" r="7"/></svg></div>
+        <div class="project-notice-copy">
+          <p class="project-notice-kicker">NEXT PROJECT / RF ONLINE</p>
+          <h2 id="cerberus-title">CERBERUS-GAMES</h2>
+          <p>Getting ready for a fresh start in RF Online with Sleeping Forest. Find the server details on the project website.</p>
+        </div>
+        <div class="project-notice-actions">
+          <a class="button project-notice-action" href="https://cerberus-games.com/ads?r=mFix0r" target="_blank" rel="noopener noreferrer">Project description <span aria-hidden="true">↗</span></a>
+          <a class="button project-notice-action project-notice-action-secondary" href="https://cerberus-games.com/threads/sleeping-forest-bcc-acc.32598/" target="_blank" rel="noopener noreferrer">Guild forum thread <span aria-hidden="true">↗</span></a>
+        </div>
+      </div>
+    </section>
+    <!-- Previous community announcement is kept for reuse. See docs/homepage-announcement.md. -->
+    <section id="community-notice" class="telegram-notice wrap" aria-labelledby="telegram-title" hidden>
       <div class="telegram-notice-card">
         <div class="telegram-notice-copy">
           <p class="telegram-kicker">STAY IN TOUCH</p>

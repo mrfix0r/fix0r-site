@@ -10,7 +10,8 @@ function fc_metrics_pages(): array {
 }
 function fc_metrics_actions(): array {
     return ['out.telegram'=>'Telegram','out.twitch'=>'Twitch','out.discord'=>'Discord',
-        'out.teamspeak'=>'TeamSpeak 3','out.boosty'=>'Boosty','out.wishlist'=>'Вишлист',
+        'out.teamspeak'=>'TeamSpeak 3','out.boosty'=>'Boosty','out.wishlist'=>'Вишлист','out.cerberus'=>'CERBERUS-GAMES — описание проекта',
+        'out.cerberus_forum'=>'CERBERUS-GAMES — тема гильдии',
         'nav.home'=>'Переход на главную','nav.stream'=>'Переход к плееру','nav.about'=>'О себе',
         'nav.schedule'=>'Расписание эфиров','nav.code'=>'Наш кодекс','nav.explore'=>'Найти своё место',
         'nav.dkp'=>'Переход в ДКП','dkp.profile'=>'Личный кабинет','dkp.events'=>'События ДКП',
