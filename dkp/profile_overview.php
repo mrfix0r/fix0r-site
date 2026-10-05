@@ -8,12 +8,21 @@ $roleName=['member'=>t('Участник'),'officer'=>t('Офицер'),'admin'=
   <p class="profile-email"><?=h($user['email'])?></p>
   <span class="profile-role"><?=h($roleName)?></span>
 </div>
-<nav class="profile-actions" aria-label="<?=h(t('Разделы кабинета'))?>">
-  <a class="profile-button profile-button-announcements" href="?page=announcements"><?=h(t('Объявления гильдии '))?><span aria-hidden="true">→</span></a>
-  <a class="profile-button profile-button-primary" href="?page=events"><?=h(t('События '))?><span aria-hidden="true">→</span></a>
-  <a class="profile-button" href="?page=auctions"><?=h(t('Аукционы гильдии '))?><span aria-hidden="true">→</span></a>
-  <?php if(in_array($user['role'],['admin','officer'],true)): ?><a class="profile-button profile-button-manage" href="?page=manage"><?=h(t('Управление ДКП '))?><span aria-hidden="true">→</span></a><?php endif; ?>
-  <?php if($user['role']==='admin'): ?><a class="profile-button" href="?page=metrics"><?=h(t('Статистика сайта'))?> <span aria-hidden="true">→</span></a><?php endif; ?>
+<nav class="profile-actions profile-navigation" aria-label="<?=h(t('Разделы кабинета'))?>">
+  <div class="profile-navigation-main">
+    <a class="profile-nav-link profile-nav-announcements" href="?page=announcements" aria-label="<?=h(t('Объявления гильдии'))?>"><?=h(t('Объявления'))?></a>
+    <a class="profile-nav-link" href="?page=events"><?=h(t('События'))?></a>
+    <a class="profile-nav-link" href="?page=auctions" aria-label="<?=h(t('Аукционы гильдии'))?>"><?=h(t('Аукционы'))?></a>
+  </div>
+  <?php if(in_array($user['role'],['admin','officer'],true)): ?>
+  <details class="profile-navigation-tools">
+    <summary><?=h(t('Управление'))?><span aria-hidden="true">⌄</span></summary>
+    <div class="profile-navigation-tools-links">
+      <a class="profile-nav-link" href="?page=manage"><?=h(t('Управление ДКП'))?><span aria-hidden="true">→</span></a>
+      <?php if($user['role']==='admin'): ?><a class="profile-nav-link" href="?page=metrics"><?=h(t('Статистика сайта'))?><span aria-hidden="true">→</span></a><?php endif; ?>
+    </div>
+  </details>
+  <?php endif; ?>
 </nav>
 <?php require __DIR__.'/announcement_banner.php'; ?>
 <div class="profile-slider" role="group" aria-label="<?=h(t('Ближайшее событие и аукцион'))?>">
@@ -53,5 +62,3 @@ $roleName=['member'=>t('Участник'),'officer'=>t('Офицер'),'admin'=
 
 
 </div>
-
-

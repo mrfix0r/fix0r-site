@@ -1,0 +1,43 @@
+/* Profile-only navigation: common sections stay visible; staff tools expand on demand. */
+.profile-navigation {
+  --nav-bg:#17111f; --nav-border:#554160; --nav-text:#e6d6f0;
+  --nav-hover:#352641; --nav-gold:#e8bf83; --nav-gold-ink:#281e16;
+  gap:6px;
+}
+.profile-navigation-main {
+  display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:4px;
+  padding:4px; border:1px solid var(--nav-border); border-radius:10px; background:var(--nav-bg);
+}
+.dkp-app .profile-navigation .profile-nav-link {
+  display:flex; align-items:center; justify-content:center; gap:10px;
+  min-width:0; min-height:44px; padding:8px 6px; border-radius:6px;
+  color:var(--nav-text); font-size:13px; font-weight:700; line-height:1.4; text-align:center;
+}
+.dkp-app .profile-navigation .profile-nav-link:hover { background:var(--nav-hover); text-decoration:none; }
+.dkp-app .profile-navigation .profile-nav-announcements { background:var(--nav-gold); color:var(--nav-gold-ink); }
+.dkp-app .profile-navigation .profile-nav-announcements:hover { background:#f4d5a5; }
+.profile-navigation .profile-navigation-tools { padding:0; border:0; }
+.dkp-app .profile-navigation-tools>summary {
+  display:flex; align-items:center; justify-content:space-between; min-height:44px;
+  padding:8px 12px; border-radius:7px; color:var(--nav-text); font-size:13px;
+  font-weight:700; line-height:1.4; list-style:none;
+}
+.profile-navigation-tools>summary::-webkit-details-marker { display:none; }
+.profile-navigation-tools>summary:hover { background:var(--nav-hover); }
+.profile-navigation-tools>summary span { font-size:18px; line-height:1; }
+.profile-navigation-tools[open]>summary span { transform:rotate(180deg); }
+.profile-navigation-tools-links {
+  display:grid; gap:4px; padding:4px; border:1px solid var(--nav-border);
+  border-radius:8px; background:var(--nav-bg);
+}
+.dkp-app .profile-navigation-tools-links .profile-nav-link { justify-content:space-between; padding:8px 10px; text-align:left; }
+.profile-navigation :is(a,summary):focus-visible { outline:2px solid var(--nav-text); outline-offset:2px; }
+[data-theme="forest"] .profile-navigation {
+  --nav-bg:#ece0cd; --nav-border:#a7aa95; --nav-text:#364838;
+  --nav-hover:#d5d9c2; --nav-gold:#e8bf83; --nav-gold-ink:#49321d;
+}
+@media(max-width:400px) { .dkp-app .profile-navigation .profile-nav-link { font-size:12px; } }
+@media(max-width:360px) {
+  .profile-navigation-main { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .profile-nav-announcements { grid-column:1/-1; }
+}
